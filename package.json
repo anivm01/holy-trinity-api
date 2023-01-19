@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.0.3",
     "knex": "^2.4.1",
     "mysql2": "^3.0.1"
   }
