@@ -114,15 +114,13 @@ exports.updateSingle = async (req, res) => {
 //delete function deletes the announcement from both the english and the bulgarian tables because of CASCADE
 
 exports.deleteSingle = async (req, res) => {
-  console.log("request received")
     try {
         const verify = await knex("weekly_announcement").select("*").where({id: req.params.id})
         if (verify.length === 0) {
             return res.status(404).json({ status: 404, message: "Couldn't find the announcement you're trying to delete"})
         }
-        console.log(verify)
         await knex("weekly_announcement").where({id: req.params.id}).del()
-        return res.status(204).json({status: 204, message: "Announcement successfully deleted"})
+        return res.status(204)
     }
     catch (error) {
         return res.status(500).json({ status: 500, message: "There was an issue with the database", error:error})
