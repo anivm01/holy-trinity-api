@@ -3,7 +3,7 @@
  * @returns { Promise<void> }
  */
 exports.up = function(knex) {
-    return knex.schema.createTable("worship_office", function(table) {
+    return knex.schema.createTable("worship_office_bg", function(table) {
         table.increments("id").primary();
         table.string('title').notNullable();
         table.text('gospel').notNullable();
@@ -17,6 +17,12 @@ exports.up = function(knex) {
             .references("images.id")
             .onUpdate("CASCADE")
             .onDelete("CASCADE")
+        table
+        .integer("en_id")
+        .unsigned()
+        .references("worship_office.id")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE")
     })
 };
 
@@ -25,5 +31,5 @@ exports.up = function(knex) {
  * @returns { Promise<void> }
  */
 exports.down = function(knex) {
-    return knex.schema.dropTable("worship_office");
+    return knex.schema.dropTable("worship_office_bg");
 };

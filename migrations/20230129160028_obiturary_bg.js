@@ -3,7 +3,7 @@
  * @returns { Promise<void> }
  */
 exports.up = function(knex) {
-    return knex.schema.createTable("obituary", function(table) {
+    return knex.schema.createTable("obituary_bg", function(table) {
         table.increments("id").primary();
         table.string('name').notNullable();
         table.string('years').notNullable();
@@ -14,6 +14,12 @@ exports.up = function(knex) {
             .references("images.id")
             .onUpdate("CASCADE")
             .onDelete("CASCADE")
+        table
+            .integer("en_id")
+            .unsigned()
+            .references("obituary.id")
+            .onUpdate("CASCADE")
+            .onDelete("CASCADE")
     })
 };
 
@@ -22,5 +28,5 @@ exports.up = function(knex) {
  * @returns { Promise<void> }
  */
 exports.down = function(knex) {
-    return knex.schema.dropTable("obituary");
+    return knex.schema.dropTable("obituary_bg");
 };
