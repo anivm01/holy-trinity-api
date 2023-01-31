@@ -11,6 +11,10 @@ const worshipOfficeRoutesEN = require("./routes/worshipOfficeRoutesEN.js")
 const worshipOfficeRoutesBG = require("./routes/worshipOfficeRoutesBG.js")
 const obituaryRoutesEN = require("./routes/obituaryRoutesEN.js")
 const obituaryRoutesBG = require("./routes/obituaryRoutesBG.js")
+const eventRoutesEN = require("./routes/eventRoutesEN.js")
+const eventRoutesBG = require("./routes/eventRoutesBG.js")
+const articleRoutesEN = require("./routes/articleRoutesEN.js")
+const articleRoutesBG = require("./routes/articleRoutesBG.js")
 
 //middleware
 app.use(express.json());
@@ -26,6 +30,10 @@ app.use("/worhsip-office/en", worshipOfficeRoutesEN)
 app.use("/worhsip-office/bg", worshipOfficeRoutesBG)
 app.use("/obituary/en", obituaryRoutesEN)
 app.use("/obituary/bg", obituaryRoutesBG)
+app.use("/event/en", eventRoutesEN)
+app.use("/event/bg", eventRoutesBG)
+app.use("/article/en", articleRoutesEN)
+app.use("/article/bg", articleRoutesBG)
 
 
 
