@@ -14,3 +14,9 @@ router
 .delete(weeklyAnnouncementControllerBG.deleteSingle);
 
 module.exports = router;
+
+// add a route to get weekly announcement by date. 
+// have to be able to get the most current announcement.
+// make the call based on date now and then search the database for all the announcements before that date
+// then sort them from newest to oldest
+// return the newest one

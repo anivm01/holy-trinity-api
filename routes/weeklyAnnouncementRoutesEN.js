@@ -1,6 +1,5 @@
 const router = require ("express").Router()
 const weeklyAnnouncementControllerEN = require("../controllers/weeklyAnnouncementControllerEN")
-const weeklyAnnouncementControllerBG = require("../controllers/weeklyAnnouncementControllerBG")
 
 router
 .route("/")

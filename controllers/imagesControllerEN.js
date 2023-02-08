@@ -3,7 +3,7 @@ const knex = require("knex")(require("../knexfile"));
   
 exports.create = async (req, res) => {
     try {
-        console.log(req.body)
+        
         if ( !req.body.description || !req.body.descriptionBG ) {
             return res.status(400).json({
             status: 400,
@@ -15,10 +15,10 @@ exports.create = async (req, res) => {
         const resultEN = await knex("images").insert(newImageEN);
         const createdImageEN = await knex("images").select("*").where({id: resultEN[0]});
 
-        const newImageBG = {description: req.body.descriptionBG, url: `/images/${req.file.filename}`, en_id: createdImageEN.id}
+        const newImageBG = {description: req.body.descriptionBG, url: `/images/${req.file.filename}`, en_id: createdImageEN[0].id}
         const resultBG = await knex("images_bg").insert(newImageBG);
         const createdImageBG = await knex("images_bg").select("*").where({id: resultBG[0]});
-
+        
         return res
             .status(201)
             .json({ message: "ok!", new_image_en: createdImageEN, new_image_bg: createdImageBG });
@@ -64,6 +64,7 @@ exports.readSingle = async (req, res) => {
               message: "Coundn't find the image you were looking for",
             });
         }
+        console.log(imageData[0])
         return res.json(imageData[0]);
       } catch (error) {
         return res

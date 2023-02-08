@@ -21,7 +21,7 @@ exports.create = async (req, res) => {
     });
     return res
       .status(201)
-      .json({ message: "ok!", new_announcement: createdAnnouncement });
+      .json({ message: "ok!", new_announcement: createdAnnouncement[0] });
   } catch (error) {
     return res.status(500).json({
       status: 500,
