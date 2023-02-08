@@ -64,7 +64,6 @@ exports.readSingle = async (req, res) => {
               message: "Coundn't find the image you were looking for",
             });
         }
-        console.log(imageData[0])
         return res.json(imageData[0]);
       } catch (error) {
         return res
