@@ -1,5 +1,5 @@
 const router = require ("express").Router()
-const articleController = require("../controllers/articleControllerEN")
+const articleController = require("../controllers/articleControllerBG")
 
 router
 .route("/")

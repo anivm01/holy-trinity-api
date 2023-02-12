@@ -1,3 +1,5 @@
+const knex = require("knex")(require("../knexfile"));
+
 exports.create = async (req, res) => {
     try {
       if (

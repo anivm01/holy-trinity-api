@@ -1,17 +1,17 @@
 const router = require ("express").Router()
-const obituaryController = require("../controllers/obituaryControllerBG")
+const eventControllerBG = require("../controllers/eventControllerBG")
 
 router
 .route("/")
-.get(obituaryController.readAll)
-.post(obituaryController.create);
+.get(eventControllerBG.readAll)
+.post(eventControllerBG.create);
 
 
 router
 .route("/:id")
-.get(obituaryController.readSingle)
-.put(obituaryController.updateSingle)
-.delete(obituaryController.deleteSingle);
+.get(eventControllerBG.readSingle)
+.put(eventControllerBG.updateSingle)
+.delete(eventControllerBG.deleteSingle);
 
 
 module.exports = router;

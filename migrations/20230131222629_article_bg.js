@@ -17,7 +17,7 @@ exports.up = function(knex) {
         table
             .integer("en_id")
             .unsigned()
-            .references("event.id")
+            .references("article.id")
             .onUpdate("CASCADE")
             .onDelete("CASCADE")
     })

@@ -1,3 +1,5 @@
+const knex = require("knex")(require("../knexfile"));
+
 exports.create = async (req, res) => {
     try {
       if (
@@ -20,7 +22,7 @@ exports.create = async (req, res) => {
       });
       return res
         .status(201)
-        .json({ message: "ok!", new_entry: createdEntry });
+        .json({ message: "ok!", new_entry: createdEntry[0] });
     } catch (error) {
       return res.status(500).json({
         status: 500,
@@ -80,8 +82,7 @@ exports.create = async (req, res) => {
       if (
         !req.body.title ||
         !req.body.event_details ||
-        !req.body.date ||
-        !req.body.en_id
+        !req.body.date
       ) {
         return res.status(400).json({
           status: 400,

@@ -1,3 +1,5 @@
+const knex = require("knex")(require("../knexfile"));
+
 exports.create = async (req, res) => {
     try {
       if (
@@ -21,8 +23,9 @@ exports.create = async (req, res) => {
       });
       return res
         .status(201)
-        .json({ message: "ok!", new_entry: createdEntry });
+        .json({ message: "ok!", new_entry: createdEntry[0] });
     } catch (error) {
+      console.log(error)
       return res.status(500).json({
         status: 500,
         message: "Couldn't create new entry",
@@ -79,11 +82,10 @@ exports.create = async (req, res) => {
   exports.updateSingle = async (req, res) => {
     try {
       if (
-        !req.body.name ||
-        !req.body.years ||
-        !req.body.obituary ||
-        !req.body.en_id ||
-        !req.body.image_id
+        !req.body.title ||
+        !req.body.content ||
+        !req.body.date_posted ||
+        !req.body.featured_img_id
       ) {
         return res.status(400).json({
           status: 400,
