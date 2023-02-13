@@ -23,7 +23,7 @@ exports.create = async (req, res) => {
       });
       return res
         .status(201)
-        .json({ message: "ok!", new_entry: createdEntry });
+        .json({ message: "ok!", new_entry: createdEntry[0] });
     } catch (error) {
       return res.status(500).json({
         status: 500,
@@ -84,7 +84,6 @@ exports.create = async (req, res) => {
         !req.body.name ||
         !req.body.years ||
         !req.body.obituary ||
-        !req.body.en_id ||
         !req.body.image_id
       ) {
         return res.status(400).json({
