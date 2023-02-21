@@ -90,7 +90,6 @@ exports.updateSingle = async (req, res) => {
         !req.body.old_testament ||
         !req.body.youtube_video_id ||
         !req.body.thumbnail_id ||
-        !req.body.en_id ||
         !req.body.date
     ) {
       return res.status(400).json({
@@ -140,7 +139,7 @@ exports.deleteSingle = async (req, res) => {
         }
         await knex("worship_office_bg").where({id: existingEntry[0].id}).del()
         await knex("worship_office").where({id: req.params.id}).del()
-        return res.status(204)
+        return res.status(204).json({ status: 204, message: "Delete successful"})
     }
     catch (error) {
         return res.status(500).json({ status: 500, message: "There was an issue with the database", error:error})

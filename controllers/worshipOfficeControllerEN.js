@@ -138,7 +138,7 @@ exports.deleteSingle = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Couldn't find the entry you're trying to delete"})
         }
         await knex("worship_office").where({id: req.params.id}).del()
-        return res.status(204)
+        return res.status(204).json({ status: 204, message: "Delete successful"})
     }
     catch (error) {
         return res.status(500).json({ status: 500, message: "There was an issue with the database", error:error})

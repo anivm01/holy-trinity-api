@@ -135,7 +135,7 @@ exports.deleteSingle = async (req, res) => {
             });
         }
         await knex("images").where({id: req.params.id}).del()
-        return res.status(204)
+        return res.status(204).json({ status: 204, message: "Delete successful"})
     }
     catch (error) {
         return res.status(500).json({ status: 500, message: "There was an issue with the database", error:error})
