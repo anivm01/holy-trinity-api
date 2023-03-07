@@ -7,7 +7,7 @@ exports.up = function(knex) {
         table.increments("id").primary();
         table.string('title').notNullable();
         table.text('content').notNullable();
-        table.integer("date_posted").notNullable();
+        table.integer("date").notNullable();
         table
             .integer("featured_img_id")
             .unsigned()

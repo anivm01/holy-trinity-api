@@ -8,6 +8,7 @@ exports.up = function(knex) {
         table.string('name').notNullable();
         table.string('years').notNullable();
         table.text('obituary').notNullable();
+        table.integer('date').notNullable();
         table
             .integer("image_id")
             .unsigned()
