@@ -5,10 +5,11 @@
 exports.up = function(knex) {
     return knex.schema.createTable("obituary_bg", function(table) {
         table.increments("id").primary();
-        table.string('name').notNullable();
-        table.string('years').notNullable();
-        table.text('obituary').notNullable();
-        table.integer('date').notNullable();
+        table.boolean("bg_version");
+        table.string('name');
+        table.string('years');
+        table.text('obituary');
+        table.integer('date');
         table
             .integer("image_id")
             .unsigned()

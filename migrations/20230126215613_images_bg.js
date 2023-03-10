@@ -5,8 +5,8 @@
 exports.up = function(knex) {
     return knex.schema.createTable("images_bg", function(table) {
         table.increments("id").primary();
-        table.string("url").notNullable();
-        table.string("description").notNullable();
+        table.string("url");
+        table.string("description");
         table
             .integer("en_id")
             .unsigned()

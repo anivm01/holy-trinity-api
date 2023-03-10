@@ -2,26 +2,15 @@ const knex = require("knex")(require("../knexfile"));
 
 exports.create = async (req, res) => {
   try {
-    if (
-      !req.body.title ||
-      !req.body.announcement ||
-      !req.body.date
-    ) {
-      return res.status(400).json({
-        status: 400,
-        message:
-          "Make sure to provide a title, announcement content and the date",
-      });
-    }
-
     const newAnnouncement = req.body;
     const result = await knex("weekly_announcement").insert(newAnnouncement);
     const createdAnnouncement = await knex("weekly_announcement").select("*").where({
       id: result[0],
     });
+    console.log(createdAnnouncement[0])
     return res
       .status(201)
-      .json({ message: "ok!", new_announcement: createdAnnouncement[0] });
+      .json({ message: "ok!", new_entry: createdAnnouncement[0] });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -76,19 +65,27 @@ exports.readAll = async (_req, res) => {
   }
 };
 
-exports.updateSingle = async (req, res) => {
+exports.readPublished = async (_req, res) => {
   try {
-    if (
-      !req.body.title ||
-      !req.body.announcement ||
-      !req.body.date
-    ) {
-      return res.status(400).json({
-        status: 400,
-        message:
-          "Make sure to provide a title, announcement content and the date",
+    const announcementData = await knex.select("*").from("weekly_announcement").where({is_draft: false});
+    if (announcementData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any announcements.",
       });
     }
+    res.status(200).json(announcementData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
+exports.updateSingle = async (req, res) => {
+  try {
     const announcementChanges = req.body;
 
     await knex("weekly_announcement")

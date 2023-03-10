@@ -3,9 +3,6 @@ const knex = require("knex")(require("../knexfile"));
 exports.create = async (req, res) => {
   try {
     if (
-      !req.body.title ||
-      !req.body.announcement ||
-      !req.body.date ||
       !req.body.en_id
     ) {
       return res.status(400).json({
@@ -14,6 +11,7 @@ exports.create = async (req, res) => {
           "Make sure to provide a title, announcement content and the date and the english version id",
       });
     }
+    
 
     const newAnnouncement = req.body;
     const result = await knex("weekly_announcement_bg").insert(newAnnouncement);
@@ -22,7 +20,7 @@ exports.create = async (req, res) => {
     });
     return res
       .status(201)
-      .json({ message: "ok!", new_announcement: createdAnnouncement });
+      .json({ message: "ok!", new_entry: createdAnnouncement });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -77,19 +75,29 @@ exports.readAll = async (_req, res) => {
   }
 };
 
-exports.updateSingle = async (req, res) => {
+exports.readPublished = async (_req, res) => {
   try {
-    if (
-      !req.body.title ||
-      !req.body.announcement ||
-      !req.body.date
-    ) {
-      return res.status(400).json({
-        status: 400,
-        message:
-          "Make sure to provide a title, announcement content and the date",
+    const announcementData = await knex("weekly_announcement_bg").where({bg_version: true}).join("weekly_announcement", {"weekly_announcement_bg.en_id": "weekly_announcement.id"}).select("*").where({"weekly_announcement.is_draft": false});
+
+    if (announcementData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any announcements.",
       });
     }
+    res.status(200).json(announcementData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
+exports.updateSingle = async (req, res) => {
+  try {
+    
     const announcementChanges = req.body;
 
     await knex("weekly_announcement_bg")

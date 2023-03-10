@@ -5,9 +5,11 @@
 exports.up = function(knex) {
     return knex.schema.createTable("event", function(table) {
         table.increments("id").primary();
-        table.string('title').notNullable();
-        table.text('event_details').notNullable();
-        table.integer("date").notNullable();
+        table.string('title');
+        table.text('event_details');
+        table.integer("date");
+        table.integer("event_date");
+        table.boolean("is_draft").index("isDraft");
     })
 };
 

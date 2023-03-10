@@ -5,9 +5,10 @@
 exports.up = function(knex) {
     return knex.schema.createTable("weekly_announcement", function(table) {
         table.increments("id").primary();
-        table.string('title').notNullable();
-        table.text('announcement').notNullable();
-        table.integer("date").notNullable();
+        table.string('title');
+        table.text('announcement');
+        table.integer("date");
+        table.boolean("is_draft").index("isDraft");
     })
 };
 

@@ -5,9 +5,11 @@
 exports.up = function(knex) {
     return knex.schema.createTable("article_bg", function(table) {
         table.increments("id").primary();
-        table.string('title').notNullable();
-        table.text('content').notNullable();
-        table.integer("date").notNullable();
+        table.boolean("bg_version");
+        table.string('title');
+        table.string('author');
+        table.text('content');
+        table.integer("date");
         table
             .integer("featured_img_id")
             .unsigned()

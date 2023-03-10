@@ -6,7 +6,6 @@ router
 .get(articleController.readAll)
 .post(articleController.create);
 
-
 router
 .route("/:id")
 .get(articleController.readSingle)

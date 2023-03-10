@@ -16,6 +16,8 @@ const eventRoutesBG = require("./routes/eventRoutesBG.js")
 const articleRoutesEN = require("./routes/articleRoutesEN.js")
 const articleRoutesBG = require("./routes/articleRoutesBG.js")
 const postedImageRoutes = require("./routes/postedImageRoutes.js")
+const publishedRoutesEN = require("./routes/publishedRoutesEN.js")
+const publishedRoutesBG = require("./routes/publishedRoutesBG.js")
 
 //middleware
 app.use(express.json());
@@ -35,7 +37,11 @@ app.use("/event/en", eventRoutesEN)
 app.use("/event/bg", eventRoutesBG)
 app.use("/article/en", articleRoutesEN)
 app.use("/article/bg", articleRoutesBG)
+
+//published
 app.use("/posted-images", postedImageRoutes)
+app.use("/published/en", publishedRoutesEN)
+app.use("/published/bg", publishedRoutesBG)
 
 
 app.listen(PORT, () => {

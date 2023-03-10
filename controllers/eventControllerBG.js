@@ -3,9 +3,6 @@ const knex = require("knex")(require("../knexfile"));
 exports.create = async (req, res) => {
     try {
       if (
-        !req.body.title ||
-        !req.body.event_details ||
-        !req.body.date ||
         !req.body.en_id
       ) {
         return res.status(400).json({
@@ -76,20 +73,29 @@ exports.create = async (req, res) => {
       });
     }
   };
+
+  exports.readPublished = async (_req, res) => {
+    try {
+      const entryData = await knex("event_bg").where({bg_version: true}).join("event", {"event_bg.en_id": "event.id"}).select("*").where({"event.is_draft": false});
+
+      if (entryData.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any entries.",
+        });
+      }
+      res.status(200).json(entryData);
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "There was an issue with the database",
+        error: error,
+      });
+    }
+  };
   
   exports.updateSingle = async (req, res) => {
     try {
-      if (
-        !req.body.title ||
-        !req.body.event_details ||
-        !req.body.date
-      ) {
-        return res.status(400).json({
-          status: 400,
-          message:
-            "Some required information is missing",
-        });
-      }
       existingEntry = await knex("event_bg").select("*")
         .where({ en_id: req.params.id })
   
