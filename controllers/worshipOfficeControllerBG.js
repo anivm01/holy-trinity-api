@@ -96,6 +96,26 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readDrafts = async (_req, res) => {
+  try {
+    const entryData = await knex("worship_office_bg")
+      .where({ bg_version: true })
+      .join("worship_office", {
+        "worship_office_bg.en_id": "worship_office.id",
+      })
+      .select("*")
+      .where({ "worship_office.is_draft": true });
+
+    res.status(200).json(entryData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.updateSingle = async (req, res) => {
   try {
     existingEntry = await knex("worship_office_bg")

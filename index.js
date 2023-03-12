@@ -37,6 +37,10 @@ const featuredImagesRoutesBG = require("./routes/featuredImagesRoutesBG.js")
 const publishedRoutesEN = require("./routes/publishedRoutesEN.js")
 const publishedRoutesBG = require("./routes/publishedRoutesBG.js")
 
+//read-only draft routes
+const draftRoutesEN = require("./routes/draftRoutesEN.js")
+const draftRoutesBG = require("./routes/draftRoutesBG.js")
+
 //middleware
 app.use(express.json());
 app.use(cors());
@@ -67,6 +71,9 @@ app.use("/posted-images", postedImageRoutes)
 app.use("/published/en", publishedRoutesEN)
 app.use("/published/bg", publishedRoutesBG)
 
+//drafts
+app.use("/drafts/en", draftRoutesEN)
+app.use("/drafts/bg", draftRoutesBG)
 
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);

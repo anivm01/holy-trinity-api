@@ -107,6 +107,30 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readDrafts = async (_req, res) => {
+  try {
+    const entryData = await knex("obituary_bg")
+      .where({ bg_version: true })
+      .join("obituary", { "obituary_bg.en_id": "obituary.id" })
+      .select("*")
+      .where({ "obituary.is_draft": true });
+
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    res.status(200).json(entryData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.updateSingle = async (req, res) => {
   try {
     existingEntry = await knex("obituary_bg")

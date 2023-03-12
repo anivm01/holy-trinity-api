@@ -84,6 +84,25 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readDrafts = async (_req, res) => {
+  try {
+    const announcementData = await knex.select("*").from("weekly_announcement").where({is_draft: true});
+    if (announcementData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any announcements.",
+      });
+    }
+    res.status(200).json(announcementData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.updateSingle = async (req, res) => {
   try {
     const announcementChanges = req.body;
