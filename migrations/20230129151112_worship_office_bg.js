@@ -13,12 +13,6 @@ exports.up = function(knex) {
         table.string('youtube_video_id');
         table.integer('date');
         table
-            .integer("thumbnail_id")
-            .unsigned()
-            .references("images.id")
-            .onUpdate("CASCADE")
-            .onDelete("CASCADE")
-        table
         .integer("en_id")
         .unsigned()
         .references("worship_office.id")

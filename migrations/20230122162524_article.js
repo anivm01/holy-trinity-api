@@ -10,12 +10,6 @@ exports.up = function(knex) {
         table.text('content');
         table.integer("date");
         table.boolean("is_draft").index("isDraft");
-        table
-            .integer("featured_img_id")
-            .unsigned()
-            .references("images.id")
-            .onUpdate("CASCADE")
-            .onDelete("CASCADE")
     })
 };
 

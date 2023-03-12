@@ -11,12 +11,6 @@ exports.up = function(knex) {
         table.text('content');
         table.integer("date");
         table
-            .integer("featured_img_id")
-            .unsigned()
-            .references("images.id")
-            .onUpdate("CASCADE")
-            .onDelete("CASCADE")
-        table
             .integer("en_id")
             .unsigned()
             .references("article.id")

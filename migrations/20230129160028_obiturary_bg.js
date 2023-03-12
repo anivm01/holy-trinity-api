@@ -11,12 +11,6 @@ exports.up = function(knex) {
         table.text('obituary');
         table.integer('date');
         table
-            .integer("image_id")
-            .unsigned()
-            .references("images.id")
-            .onUpdate("CASCADE")
-            .onDelete("CASCADE")
-        table
             .integer("en_id")
             .unsigned()
             .references("obituary.id")

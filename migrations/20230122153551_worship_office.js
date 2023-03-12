@@ -12,12 +12,6 @@ exports.up = function(knex) {
         table.string('youtube_video_id');
         table.integer('date');
         table.boolean("is_draft").index("isDraft")
-        table
-            .integer("thumbnail_id")
-            .unsigned()
-            .references("images.id")
-            .onUpdate("CASCADE")
-            .onDelete("CASCADE")
     })
 };
 
