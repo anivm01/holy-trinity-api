@@ -1,4 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
+const {sortNewestToOldest} = require("../utilities/sort.js");
+
 
 exports.create = async (req, res) => {
   try {
@@ -22,7 +24,7 @@ exports.create = async (req, res) => {
 
     if (req.body.thumbnail_id) {
       const newImage = {
-        image_id: req.body.thumbnail_id_id,
+        image_id: req.body.thumbnail_id,
         worship_office: createdEntry[0].id,
       };
       const imageResult = await knex("thumbnails").insert(newImage);
@@ -63,7 +65,14 @@ exports.readSingle = async (req, res) => {
 exports.readAll = async (_req, res) => {
   try {
     const entryData = await knex.select("*").from("worship_office");
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -79,7 +88,14 @@ exports.readPublished = async (_req, res) => {
       .select("*")
       .from("worship_office")
       .where({ is_draft: false });
-    res.status(200).json(entryData);
+      if (entryData.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any data.",
+        });
+      }
+      const sortedData = sortNewestToOldest(entryData)
+      return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -95,7 +111,14 @@ exports.readDrafts = async (_req, res) => {
       .select("*")
       .from("worship_office")
       .where({ is_draft: true });
-    res.status(200).json(entryData);
+      if (entryData.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any data.",
+        });
+      }
+      const sortedData = sortNewestToOldest(entryData)
+      return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,

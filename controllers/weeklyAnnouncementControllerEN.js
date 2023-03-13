@@ -1,3 +1,5 @@
+const {sortNewestToOldest} = require("../utilities/sort.js");
+
 const knex = require("knex")(require("../knexfile"));
 
 exports.create = async (req, res) => {
@@ -7,7 +9,6 @@ exports.create = async (req, res) => {
     const createdAnnouncement = await knex("weekly_announcement").select("*").where({
       id: result[0],
     });
-    console.log(createdAnnouncement[0])
     return res
       .status(201)
       .json({ message: "ok!", new_entry: createdAnnouncement[0] });
@@ -55,7 +56,9 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    res.status(200).json(announcementData);
+
+    const sortedData = sortNewestToOldest(announcementData)
+    res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -74,7 +77,8 @@ exports.readPublished = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    res.status(200).json(announcementData);
+    const sortedData = sortNewestToOldest(announcementData)
+    res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -93,7 +97,8 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    res.status(200).json(announcementData);
+    const sortedData = sortNewestToOldest(announcementData)
+    res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,

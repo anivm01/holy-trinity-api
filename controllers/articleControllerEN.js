@@ -1,4 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -65,14 +66,14 @@ exports.readSingle = async (req, res) => {
 exports.readAll = async (_req, res) => {
   try {
     const entryData = await knex.select("*").from("article");
-
-    // if (entryData.length === 0) {
-    //   return res.status(404).json({
-    //     status: 404,
-    //     message: "Not Found: Couldn't find any entries.",
-    //   });
-    // }
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -88,14 +89,14 @@ exports.readPublished = async (_req, res) => {
       .select("*")
       .from("article")
       .where({ is_draft: false });
-
-    // if (entryData.length === 0) {
-    //   return res.status(404).json({
-    //     status: 404,
-    //     message: "Not Found: Couldn't find any entries.",
-    //   });
-    // }
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -111,8 +112,14 @@ exports.readDrafts = async (_req, res) => {
       .select("*")
       .from("article")
       .where({ is_draft: true });
-
-    res.status(200).json(entryData);
+if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+      const sortedData = sortNewestToOldest(entryData);
+      return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -148,7 +155,7 @@ exports.updateSingle = async (req, res) => {
         article: req.params.id,
       });
       if(featuredImage.length !== 0) {
-        await knex("featured_images").where({ article: req.params.id }).update(imageUpdate)
+        await knex("featured_images").where({ id: featuredImage[0].id }).update(imageUpdate)
       } else {
         await knex("featured_images").insert(imageUpdate)
       }

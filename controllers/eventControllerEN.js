@@ -1,4 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
+const {sortNewestToOldest} = require("../utilities/sort.js");
+
 
 exports.create = async (req, res) => {
   try {
@@ -49,7 +51,8 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    res.status(200).json(entryData);
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -72,7 +75,8 @@ exports.readPublished = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    res.status(200).json(entryData);
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -95,7 +99,8 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    res.status(200).json(entryData);
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,

@@ -1,4 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -48,12 +49,12 @@ exports.readSingle = async (req, res) => {
       .select("*")
       .from("article_bg")
       .where({ en_id: req.params.id });
-    // if (entryData.length === 0) {
-    //   return res.status(404).json({
-    //     status: 404,
-    //     message: "Coundn't find the entry you were looking for",
-    //   });
-    // }
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Coundn't find the entry you were looking for",
+      });
+    }
     return res.json(entryData[0]);
   } catch (error) {
     console.log(error);
@@ -71,13 +72,14 @@ exports.readAll = async (_req, res) => {
       .select("*")
       .from("article_bg")
       .where({ bg_version: true });
-    // if (entryData.length === 0) {
-    //   return res.status(404).json({
-    //     status: 404,
-    //     message: "Not Found: Couldn't find any entries.",
-    //   });
-    // }
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -94,14 +96,14 @@ exports.readPublished = async (_req, res) => {
       .join("article", { "article_bg.en_id": "article.id" })
       .select("*")
       .where({ "article.is_draft": false });
-
-    // if (entryData.length === 0) {
-    //   return res.status(404).json({
-    //     status: 404,
-    //     message: "Not Found: Couldn't find any entries.",
-    //   });
-    // }
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -117,8 +119,14 @@ exports.readDrafts = async (_req, res) => {
       .join("article", { "article_bg.en_id": "article.id" })
       .select("*")
       .where({ "article.is_draft": true });
-
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -145,7 +153,6 @@ exports.updateSingle = async (req, res) => {
     const updatedEntry = await knex("article_bg").select("*").where({
       en_id: req.params.id,
     });
-    console.log(updatedEntry[0]);
     let image;
     if (req.body.featured_img_id) {
       const imageUpdate = {

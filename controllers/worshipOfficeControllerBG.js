@@ -1,4 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
+const {sortNewestToOldest} = require("../utilities/sort.js");
+
 
 exports.create = async (req, res) => {
   try {
@@ -65,8 +67,14 @@ exports.readSingle = async (req, res) => {
 exports.readAll = async (_req, res) => {
   try {
     const entryData = await knex.select("*").from("worship_office_bg");
-
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -85,8 +93,15 @@ exports.readPublished = async (_req, res) => {
       })
       .select("*")
       .where({ "worship_office.is_draft": false });
-
-    res.status(200).json(entryData);
+      if (entryData.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any data.",
+        });
+      }
+      const sortedData = sortNewestToOldest(entryData)
+      return res.status(200).json(sortedData);
+    
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -106,7 +121,14 @@ exports.readDrafts = async (_req, res) => {
       .select("*")
       .where({ "worship_office.is_draft": true });
 
-    res.status(200).json(entryData);
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData)
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
