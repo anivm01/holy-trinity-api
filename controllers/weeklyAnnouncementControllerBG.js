@@ -1,5 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
-const {sortNewestToOldest} = require("../utilities/sort.js");
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -61,7 +61,7 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    const sortedData = sortNewestToOldest(announcementData)
+    const sortedData = sortNewestToOldest(announcementData);
     res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -79,7 +79,14 @@ exports.readPublished = async (_req, res) => {
       .join("weekly_announcement", {
         "weekly_announcement_bg.en_id": "weekly_announcement.id",
       })
-      .select("*")
+      .select(
+        "weekly_announcement_bg.id",
+        "weekly_announcement_bg.title",
+        "weekly_announcement_bg.announcement",
+        "weekly_announcement_bg.date",
+        "weekly_announcement_bg.bg_version",
+        "weekly_announcement_bg.en_id"
+      )
       .where({ "weekly_announcement.is_draft": false });
 
     if (announcementData.length === 0) {
@@ -88,7 +95,7 @@ exports.readPublished = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    const sortedData = sortNewestToOldest(announcementData)
+    const sortedData = sortNewestToOldest(announcementData);
     res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -115,7 +122,7 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any announcements.",
       });
     }
-    const sortedData = sortNewestToOldest(announcementData)
+    const sortedData = sortNewestToOldest(announcementData);
     res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -157,12 +164,10 @@ exports.deleteSingle = async (req, res) => {
       .select("*")
       .where({ en_id: req.params.id });
     if (verify.length === 0) {
-      return res
-        .status(404)
-        .json({
-          status: 404,
-          message: "Couldn't find the announcement you're trying to delete",
-        });
+      return res.status(404).json({
+        status: 404,
+        message: "Couldn't find the announcement you're trying to delete",
+      });
     }
     await knex("weekly_announcement_bg").where({ en_id: req.params.id }).del();
     await knex("weekly_announcement").where({ id: req.params.id }).del();
@@ -170,12 +175,10 @@ exports.deleteSingle = async (req, res) => {
       .status(204)
       .json({ status: 204, message: "Announcement successfully deleted" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        message: "There was an issue with the database",
-        error: error,
-      });
+    return res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
   }
 };

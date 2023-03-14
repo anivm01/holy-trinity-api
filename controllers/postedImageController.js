@@ -3,33 +3,33 @@ const knex = require("knex")(require("../knexfile"));
 exports.readAll = async (req, res) => {
   try {
     const articlesBG = await knex
-      .select("id")
-      .from("article_bg")
-      .where({ featured_img_id: req.params.id });
+      .select("article")
+      .from("featured_images_bg")
+      .where({ image_id: req.params.id });
 
     const articlesEN = await knex
-      .select("id")
-      .from("article")
-      .where({ featured_img_id: req.params.id });
+      .select("article")
+      .from("featured_images")
+      .where({ image_id: req.params.id });
 
     const worshipOfficesEN = await knex
-      .select("id")
-      .from("worship_office")
-      .where({ thumbnail_id: req.params.id });
+      .select("worship_office")
+      .from("thumbnails")
+      .where({ image_id: req.params.id });
 
     const worshipOfficesBG = await knex
-      .select("id")
-      .from("worship_office_bg")
-      .where({ thumbnail_id: req.params.id });
+      .select("worship_office")
+      .from("thumbnails_bg")
+      .where({ image_id: req.params.id });
 
     const obituariesEN = await knex
-      .select("id")
-      .from("obituary")
+      .select("obituary")
+      .from("deceased")
       .where({ image_id: req.params.id });
 
     const obituariesBG = await knex
-      .select("id")
-      .from("obituary_bg")
+      .select("obituary")
+      .from("deceased_bg")
       .where({ image_id: req.params.id });
 
     res

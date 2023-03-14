@@ -94,7 +94,15 @@ exports.readPublished = async (_req, res) => {
     const entryData = await knex("article_bg")
       .where({ bg_version: true })
       .join("article", { "article_bg.en_id": "article.id" })
-      .select("*")
+      .select(
+        "article_bg.id",
+        "article_bg.bg_version",
+        "article_bg.title",
+        "article_bg.author",
+        "article_bg.content",
+        "article_bg.date",
+        "article_bg.en_id"
+      )
       .where({ "article.is_draft": false });
     if (entryData.length === 0) {
       return res.status(404).json({

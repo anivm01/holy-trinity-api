@@ -1,17 +1,17 @@
 const router = require ("express").Router()
-const eventController = require("../controllers/eventControllerEN")
+const eventControllerEN = require("../controllers/eventControllerEN")
 
 router
 .route("/")
-.get(eventController.readAll)
-.post(eventController.create);
-
+.get(eventControllerEN.readAll)
+.post(eventControllerEN.create);
 
 router
 .route("/:id")
-.get(eventController.readSingle)
-.put(eventController.updateSingle)
-.delete(eventController.deleteSingle);
+.get(eventControllerEN.readSingle)
+.put(eventControllerEN.updateSingle)
+.delete(eventControllerEN.deleteSingle);
+
 
 
 module.exports = router;

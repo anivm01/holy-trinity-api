@@ -1,5 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
-const {sortNewestToOldest} = require("../utilities/sort.js");
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -56,7 +56,7 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -70,10 +70,18 @@ exports.readAll = async (_req, res) => {
 exports.readPublished = async (_req, res) => {
   try {
     const entryData = await knex("event_bg")
-      .where({ bg_version: true })
-      .join("event", { "event_bg.en_id": "event.id" })
-      .select("*")
-      .where({ "event.is_draft": false });
+      .select(
+        "event_bg.title",
+        "event_bg.event_details",
+        "event_bg.event_date",
+        "event_bg.date",
+        "event_bg.en_id",
+        "event_bg.id",
+        "event_bg.bg_version"
+      )
+      .innerJoin("event", { "event.id": "event_bg.en_id" })
+      .where({ "event.is_draft": false })
+      .where({ "event_bg.bg_version": true });
 
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -81,7 +89,7 @@ exports.readPublished = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -106,7 +114,7 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -155,23 +163,19 @@ exports.deleteSingle = async (req, res) => {
       .select("*")
       .where({ en_id: req.params.id });
     if (existingEntry.length === 0) {
-      return res
-        .status(404)
-        .json({
-          status: 404,
-          message: "Couldn't find the entry you're trying to delete",
-        });
+      return res.status(404).json({
+        status: 404,
+        message: "Couldn't find the entry you're trying to delete",
+      });
     }
     await knex("event_bg").where({ id: existingEntry[0].id }).del();
     await knex("event").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        message: "There was an issue with the database",
-        error: error,
-      });
+    return res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
   }
 };

@@ -1,6 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
-const {sortNewestToOldest} = require("../utilities/sort.js");
-
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -51,7 +50,7 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -75,7 +74,7 @@ exports.readPublished = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -99,7 +98,7 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -110,6 +109,7 @@ exports.readDrafts = async (_req, res) => {
   }
 };
 
+//delete function deletes the announcement from both the english and the bulgarian tables because of CASCADE
 exports.updateSingle = async (req, res) => {
   try {
     existingEntry = await knex("event")
@@ -139,31 +139,24 @@ exports.updateSingle = async (req, res) => {
     });
   }
 };
-
-//delete function deletes the announcement from both the english and the bulgarian tables because of CASCADE
-
 exports.deleteSingle = async (req, res) => {
   try {
     const existingEntry = await knex("event")
       .select("*")
       .where({ id: req.params.id });
     if (existingEntry.length === 0) {
-      return res
-        .status(404)
-        .json({
-          status: 404,
-          message: "Couldn't find the entry you're trying to delete",
-        });
+      return res.status(404).json({
+        status: 404,
+        message: "Couldn't find the entry you're trying to delete",
+      });
     }
     await knex("event").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        message: "There was an issue with the database",
-        error: error,
-      });
+    return res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
   }
 };

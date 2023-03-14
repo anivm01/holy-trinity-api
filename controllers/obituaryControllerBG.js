@@ -14,25 +14,27 @@ exports.create = async (req, res) => {
       years: req.body.years,
       date: req.body.date,
       bg_version: req.body.bg_version,
-      en_id: req.body.en_id
+      en_id: req.body.en_id,
     };
     const result = await knex("obituary_bg").insert(newEntry);
     const createdEntry = await knex("obituary_bg").select("*").where({
       id: result[0],
     });
 
-    let image = []
-    if(req.body.image_id){
+    let image = [];
+    if (req.body.image_id) {
       const newImage = {
         image_id: req.body.image_id,
         obituary: createdEntry[0].id,
-      }
+      };
       const imageResult = await knex("deceased_bg").insert(newImage);
       image = await knex("deceased_bg").select("*").where({
         id: imageResult[0],
       });
     }
-    return res.status(201).json({ message: "ok!", new_entry: createdEntry[0], image: image[0] });
+    return res
+      .status(201)
+      .json({ message: "ok!", new_entry: createdEntry[0], image: image[0] });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -88,7 +90,15 @@ exports.readPublished = async (_req, res) => {
     const entryData = await knex("obituary_bg")
       .where({ bg_version: true })
       .join("obituary", { "obituary_bg.en_id": "obituary.id" })
-      .select("*")
+      .select(
+        "obituary_bg.id",
+        "obituary_bg.bg_version",
+        "obituary_bg.name",
+        "obituary_bg.years",
+        "obituary_bg.obituary",
+        "obituary_bg.date",
+        "obituary_bg.en_id"
+      )
       .where({ "obituary.is_draft": false });
 
     if (entryData.length === 0) {
@@ -148,7 +158,7 @@ exports.updateSingle = async (req, res) => {
       obituary: req.body.obituary,
       years: req.body.years,
       date: req.body.date,
-      bg_version: req.body.bg_version
+      bg_version: req.body.bg_version,
     };
 
     await knex("obituary_bg")
@@ -159,20 +169,22 @@ exports.updateSingle = async (req, res) => {
       en_id: req.params.id,
     });
 
-    let image = []
-    if(req.body.image_id){
+    let image = [];
+    if (req.body.image_id) {
       const imageUpdate = {
         image_id: req.body.image_id,
         obituary: req.params.id,
-      }
+      };
       const currentImage = await knex("deceased_bg").select("*").where({
         obituary: req.params.id,
       });
-      if(currentImage.length !== 0) {
-        await knex("deceased_bg").where({
-          obituary: req.params.id,
-        }).update(imageUpdate)
-      }else {
+      if (currentImage.length !== 0) {
+        await knex("deceased_bg")
+          .where({
+            obituary: req.params.id,
+          })
+          .update(imageUpdate);
+      } else {
         await knex("deceased_bg").insert(imageUpdate);
       }
       image = await knex("deceased_bg").select("*").where({
@@ -180,9 +192,11 @@ exports.updateSingle = async (req, res) => {
       });
     }
 
-    return res.status(201).json({message: "ok", updated_entry: updatedEntry[0], image: image[0]});
+    return res
+      .status(201)
+      .json({ message: "ok", updated_entry: updatedEntry[0], image: image[0] });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Unable to update the entry",
@@ -197,23 +211,19 @@ exports.deleteSingle = async (req, res) => {
       .select("*")
       .where({ en_id: req.params.id });
     if (existingEntry.length === 0) {
-      return res
-        .status(404)
-        .json({
-          status: 404,
-          message: "Couldn't find the entry you're trying to delete",
-        });
+      return res.status(404).json({
+        status: 404,
+        message: "Couldn't find the entry you're trying to delete",
+      });
     }
     await knex("obituary_bg").where({ id: existingEntry[0].id }).del();
     await knex("obituary").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        message: "There was an issue with the database",
-        error: error,
-      });
+    return res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
   }
 };
