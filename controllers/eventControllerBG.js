@@ -100,6 +100,78 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readUpcoming = async (req, res) => {
+  try {
+    const entryData = await knex("event_bg")
+      .select(
+        "event_bg.title",
+        "event_bg.event_details",
+        "event_bg.event_date",
+        "event_bg.date",
+        "event_bg.en_id",
+        "event_bg.id",
+        "event_bg.bg_version"
+      )
+      .innerJoin("event", { "event.id": "event_bg.en_id" })
+      .where({ "event.is_draft": false })
+      .where({ "event_bg.bg_version": true });
+
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const upcomingData = sortedData.filter((single)=>{
+      return single.event_date > req.params.date
+    })  
+    return res.status(200).json(upcomingData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
+exports.readPast = async (req, res) => {
+  try {
+    const entryData = await knex("event_bg")
+      .select(
+        "event_bg.title",
+        "event_bg.event_details",
+        "event_bg.event_date",
+        "event_bg.date",
+        "event_bg.en_id",
+        "event_bg.id",
+        "event_bg.bg_version"
+      )
+      .innerJoin("event", { "event.id": "event_bg.en_id" })
+      .where({ "event.is_draft": false })
+      .where({ "event_bg.bg_version": true });
+
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const pastData = sortedData.filter((single)=>{
+      return single.event_date < req.params.date
+    })  
+    return res.status(200).json(pastData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.readDrafts = async (_req, res) => {
   try {
     const entryData = await knex("event_bg")

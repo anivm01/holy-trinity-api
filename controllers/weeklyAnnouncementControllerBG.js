@@ -106,6 +106,43 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readSingleMostRecent = async (req, res) => {
+  try {
+    const announcementData = await knex("weekly_announcement_bg")
+      .where({ bg_version: true })
+      .join("weekly_announcement", {
+        "weekly_announcement_bg.en_id": "weekly_announcement.id",
+      })
+      .select(
+        "weekly_announcement_bg.id",
+        "weekly_announcement_bg.title",
+        "weekly_announcement_bg.announcement",
+        "weekly_announcement_bg.date",
+        "weekly_announcement_bg.bg_version",
+        "weekly_announcement_bg.en_id"
+      )
+      .where({ "weekly_announcement.is_draft": false });
+
+    if (announcementData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any announcements.",
+      });
+    }
+    const sortedData = sortNewestToOldest(announcementData);
+    const processedData = sortedData.filter((single)=>{
+      return single.date < req.params.date
+    })  
+    res.status(200).json(processedData[0]);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.readDrafts = async (_req, res) => {
   try {
     const announcementData = await knex("weekly_announcement_bg")

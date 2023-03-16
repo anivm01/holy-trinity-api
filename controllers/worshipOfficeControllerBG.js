@@ -1,6 +1,5 @@
 const knex = require("knex")(require("../knexfile"));
-const {sortNewestToOldest} = require("../utilities/sort.js");
-
+const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
@@ -73,7 +72,7 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any data.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -91,17 +90,65 @@ exports.readPublished = async (_req, res) => {
       .join("worship_office", {
         "worship_office_bg.en_id": "worship_office.id",
       })
-      .select("*")
+      .select(
+        "worship_office_bg.id",
+        "worship_office_bg.bg_version",
+        "worship_office_bg.title",
+        "worship_office_bg.gospel",
+        "worship_office_bg.epistle",
+        "worship_office_bg.old_testament",
+        "worship_office_bg.youtube_video_id",
+        "worship_office_bg.date",
+        "worship_office_bg.en_id"
+      )
       .where({ "worship_office.is_draft": false });
-      if (entryData.length === 0) {
-        return res.status(404).json({
-          status: 404,
-          message: "Not Found: Couldn't find any data.",
-        });
-      }
-      const sortedData = sortNewestToOldest(entryData)
-      return res.status(200).json(sortedData);
-    
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
+exports.readPast = async (req, res) => {
+  try {
+    const entryData = await knex("worship_office_bg")
+      .where({ bg_version: true })
+      .join("worship_office", {
+        "worship_office_bg.en_id": "worship_office.id",
+      })
+      .select(
+        "worship_office_bg.id",
+        "worship_office_bg.bg_version",
+        "worship_office_bg.title",
+        "worship_office_bg.gospel",
+        "worship_office_bg.epistle",
+        "worship_office_bg.old_testament",
+        "worship_office_bg.youtube_video_id",
+        "worship_office_bg.date",
+        "worship_office_bg.en_id"
+      )
+      .where({ "worship_office.is_draft": false });
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const pastData = sortedData.filter((single) => {
+      return single.date < req.params.date;
+    });
+    return res.status(200).json(pastData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -127,7 +174,7 @@ exports.readDrafts = async (_req, res) => {
         message: "Not Found: Couldn't find any data.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData)
+    const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({

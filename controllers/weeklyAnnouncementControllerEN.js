@@ -88,6 +88,29 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readSingleMostRecent = async (req, res) => {
+  try {
+    const announcementData = await knex.select("*").from("weekly_announcement").where({is_draft: false});
+    if (announcementData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any announcements.",
+      });
+    }
+    const sortedData = sortNewestToOldest(announcementData)
+    const processedData = sortedData.filter((single)=>{
+      return single.date < req.params.date
+    })  
+    res.status(200).json(processedData[0]);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.readDrafts = async (_req, res) => {
   try {
     const announcementData = await knex.select("*").from("weekly_announcement").where({is_draft: true});

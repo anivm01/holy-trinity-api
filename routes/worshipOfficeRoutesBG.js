@@ -1,17 +1,17 @@
 const router = require ("express").Router()
-const worshipOfficeController = require("../controllers/worshipOfficeControllerBG")
+const worshipOfficeControllerBG = require("../controllers/worshipOfficeControllerBG")
 
 router
 .route("/")
-.get(worshipOfficeController.readAll)
-.post(worshipOfficeController.create);
+.get(worshipOfficeControllerBG.readAll)
+.post(worshipOfficeControllerBG.create);
 
 
 router
 .route("/:id")
-.get(worshipOfficeController.readSingle)
-.put(worshipOfficeController.updateSingle)
-.delete(worshipOfficeController.deleteSingle);
+.get(worshipOfficeControllerBG.readSingle)
+.put(worshipOfficeControllerBG.updateSingle)
+.delete(worshipOfficeControllerBG.deleteSingle);
 
 
 module.exports = router;

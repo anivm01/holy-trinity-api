@@ -106,6 +106,32 @@ exports.readPublished = async (_req, res) => {
   }
 };
 
+exports.readPast = async (req, res) => {
+  try {
+    const entryData = await knex
+      .select("*")
+      .from("article")
+      .where({ is_draft: false });
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const pastData = sortedData.filter((single) => {
+      return single.date < req.params.date;
+    });
+    return res.status(200).json(pastData);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.readDrafts = async (_req, res) => {
   try {
     const entryData = await knex
