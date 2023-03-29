@@ -3,6 +3,13 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
+    //req verification
+    if(!req.body.is_draft || !req.body.date) {
+      return res.status(400).json({
+        status: 400,
+        message: "Bad request. Required information is missing."
+      });
+    }
     const newEntry = req.body;
     const result = await knex("event").insert(newEntry);
     const createdEntry = await knex("event").select("*").where({
@@ -102,7 +109,40 @@ exports.readUpcoming = async (req, res) => {
     const upcomingData = sortedData.filter((single)=>{
       return single.event_date > req.params.date
     })  
-    return res.status(200).json(upcomingData);
+    const reSortedArray = upcomingData.sort((a, b) => {
+      return new Date(a.event_date) - new Date(b.event_date);
+    });
+    return res.status(200).json(reSortedArray);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
+exports.readSingleClosestUpcoming = async (req, res) => {
+  try {
+    const entryData = await knex
+      .select("*")
+      .from("event")
+      .where({ is_draft: false });
+
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any entries.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const upcomingData = sortedData.filter((single)=>{
+      return single.event_date > req.params.date
+    })  
+    const reSortedArray = upcomingData.sort((a, b) => {
+      return new Date(a.event_date) - new Date(b.event_date);
+    });
+    return res.status(200).json(reSortedArray[0]);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -125,11 +165,14 @@ exports.readPast = async (req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = sortNewestToOldest(entryData);
+    const sortedData = entryData.sort( (a,b) => {
+      return new Date(b.event_date) - new Date(a.event_date);
+  })
     const pastData = sortedData.filter((single)=>{
       return single.event_date < req.params.date
     })  
-    return res.status(200).json(pastData);
+    const latestData = pastData.slice(0, 5)
+    return res.status(200).json(latestData);
   } catch (error) {
     res.status(500).json({
       status: 500,

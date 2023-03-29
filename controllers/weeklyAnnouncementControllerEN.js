@@ -101,6 +101,7 @@ exports.readSingleMostRecent = async (req, res) => {
     const processedData = sortedData.filter((single)=>{
       return single.date < req.params.date
     })  
+    
     res.status(200).json(processedData[0]);
   } catch (error) {
     res.status(500).json({

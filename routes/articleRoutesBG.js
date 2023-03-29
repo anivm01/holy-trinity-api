@@ -11,7 +11,6 @@ router
 .route("/:id")
 .get(articleController.readSingle)
 .put(articleController.updateSingle)
-.delete(articleController.deleteSingle);
 
 
 module.exports = router;

@@ -130,6 +130,32 @@ exports.readPast = async (req, res) => {
   }
 };
 
+exports.readLatest = async (req, res) => {
+  try {
+    const entryData = await knex
+      .select("*")
+      .from("worship_office")
+      .where({ is_draft: false });
+    if (entryData.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Not Found: Couldn't find any data.",
+      });
+    }
+    const sortedData = sortNewestToOldest(entryData);
+    const pastData = sortedData.filter((single) => {
+      return single.date < req.params.date;
+    });
+    return res.status(200).json(pastData[0]);
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
+  }
+};
+
 exports.readDrafts = async (_req, res) => {
   try {
     const entryData = await knex

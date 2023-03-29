@@ -1,7 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
 
 exports.readSingle = async (req, res) => {
-  console.log("req made")
     try {
       const entryData = await knex
         .select("*")
