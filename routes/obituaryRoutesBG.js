@@ -11,7 +11,6 @@ router
 .route("/:id")
 .get(obituaryController.readSingle)
 .put(obituaryController.updateSingle)
-.delete(obituaryController.deleteSingle);
 
 
 module.exports = router;

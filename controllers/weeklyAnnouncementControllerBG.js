@@ -3,26 +3,78 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
-    if (!req.body.en_id) {
+    //req verification
+    if (
+      typeof req.body.bg_version !== "boolean" ||
+      !req.body.en_id ||
+      !req.body.date
+    ) {
       return res.status(400).json({
         status: 400,
-        message:
-          "Make sure to provide a title, announcement content and the date and the english version id",
+        message: "Bad request. Required information is missing.",
       });
     }
-
+    //create new entry
     const newAnnouncement = req.body;
     const result = await knex("weekly_announcement_bg").insert(newAnnouncement);
+    //find created entry
     const createdAnnouncement = await knex("weekly_announcement_bg").where({
       id: result[0],
     });
+    //send response with created entry
     return res
       .status(201)
-      .json({ message: "ok!", new_entry: createdAnnouncement });
+      .json({ message: "ok!", new_entry: createdAnnouncement[0] });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Couldn't create new announcement",
+      error: error,
+    });
+  }
+};
+
+exports.updateSingle = async (req, res) => {
+  try {
+    //req verification
+    if (typeof req.body.bg_version !== "boolean" || !req.body.date) {
+      return res.status(400).json({
+        status: 400,
+        message: "Bad request. Required information is missing.",
+      });
+    }
+    //find existing entry
+    const existingAnnouncement = await knex("weekly_announcement_bg")
+      .select("*")
+      .where({
+        id: req.params.id,
+      });
+    //send error if entry doesn't exist
+    if (existingAnnouncement.length === 0) {
+      res.status(404).json({
+        status: 404,
+        message: "The entry you're trying to update doesn't exist",
+      });
+    }
+    //update entry
+    const announcementChanges = req.body;
+    await knex("weekly_announcement_bg")
+      .where({ en_id: req.params.id })
+      .update(announcementChanges);
+    //find updated entry
+    const updatedAnnouncement = await knex("weekly_announcement_bg")
+      .select("*")
+      .where({
+        id: req.params.id,
+      });
+    //return response with updated entry
+    return res.status(201).json(updatedAnnouncement[0]);
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({
+      status: 500,
+      message: "Unable to update the announcement",
       error: error,
     });
   }
@@ -130,9 +182,9 @@ exports.readSingleMostRecent = async (req, res) => {
       });
     }
     const sortedData = sortNewestToOldest(announcementData);
-    const processedData = sortedData.filter((single)=>{
-      return single.date < req.params.date
-    })  
+    const processedData = sortedData.filter((single) => {
+      return single.date < req.params.date;
+    });
     res.status(200).json(processedData[0]);
   } catch (error) {
     res.status(500).json({
@@ -163,56 +215,6 @@ exports.readDrafts = async (_req, res) => {
     res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
-      status: 500,
-      message: "There was an issue with the database",
-      error: error,
-    });
-  }
-};
-
-exports.updateSingle = async (req, res) => {
-  try {
-    const announcementChanges = req.body;
-
-    await knex("weekly_announcement_bg")
-      .where({ en_id: req.params.id })
-      .update(announcementChanges);
-
-    const updatedAnnouncement = await knex("weekly_announcement_bg")
-      .select("*")
-      .where({
-        id: req.params.id,
-      });
-
-    return res.status(201).json(updatedAnnouncement[0]);
-  } catch (error) {
-    return res.status(500).json({
-      status: 500,
-      message: "Unable to update the announcement",
-      error: error,
-    });
-  }
-};
-
-//delete function deletes the announcement from both the english and the bulgarian tables
-exports.deleteSingle = async (req, res) => {
-  try {
-    const verify = await knex("weekly_announcement_bg")
-      .select("*")
-      .where({ en_id: req.params.id });
-    if (verify.length === 0) {
-      return res.status(404).json({
-        status: 404,
-        message: "Couldn't find the announcement you're trying to delete",
-      });
-    }
-    await knex("weekly_announcement_bg").where({ en_id: req.params.id }).del();
-    await knex("weekly_announcement").where({ id: req.params.id }).del();
-    return res
-      .status(204)
-      .json({ status: 204, message: "Announcement successfully deleted" });
-  } catch (error) {
-    return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
       error: error,

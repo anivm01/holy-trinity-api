@@ -5,7 +5,7 @@ exports.create = async (req, res) => {
   try {
     //req verification
     if (
-      req.body.bg_version === undefined ||
+      typeof(req.body.bg_version) !== 'boolean' ||
       !req.body.date ||
       !req.body.en_id
     ) {
@@ -59,7 +59,7 @@ exports.create = async (req, res) => {
 exports.updateSingle = async (req, res) => {
   try {
     //req verification
-    if (req.body.bg_version === undefined || !req.body.date) {
+    if (typeof(req.body.bg_version) !== 'boolean' || !req.body.date) {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing.",

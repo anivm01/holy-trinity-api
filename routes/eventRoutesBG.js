@@ -11,7 +11,6 @@ router
 .route("/:id")
 .get(eventControllerBG.readSingle)
 .put(eventControllerBG.updateSingle)
-.delete(eventControllerBG.deleteSingle);
 
 
 module.exports = router;

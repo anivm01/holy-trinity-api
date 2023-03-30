@@ -4,7 +4,7 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 exports.create = async (req, res) => {
   try {
     //req verification
-    if(req.body.is_draft === undefined || !req.body.date) {
+    if(typeof(req.body.is_draft) !== 'boolean' || !req.body.date) {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing."
@@ -61,7 +61,7 @@ exports.create = async (req, res) => {
 exports.updateSingle = async (req, res) => {
   try {
     //req verification
-    if(!req.body.date || req.body.is_draft === undefined) {
+    if(!req.body.date || typeof(req.body.is_draft) !== 'boolean') {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing."

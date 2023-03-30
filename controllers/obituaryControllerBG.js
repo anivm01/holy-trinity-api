@@ -3,12 +3,18 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
-    if (!req.body.en_id) {
+    //req verification
+    if (
+      typeof req.body.bg_version !== "boolean" ||
+      !req.body.date ||
+      !req.body.en_id
+    ) {
       return res.status(400).json({
         status: 400,
-        message: "Some required information is missing",
+        message: "Bad request. Required information is missing.",
       });
     }
+    //create new entry
     const newEntry = {
       name: req.body.name,
       obituary: req.body.obituary,
@@ -18,28 +24,114 @@ exports.create = async (req, res) => {
       en_id: req.body.en_id,
     };
     const result = await knex("obituary_bg").insert(newEntry);
+    //find newly created entry
     const createdEntry = await knex("obituary_bg").select("*").where({
       id: result[0],
     });
 
+    //create image association
     let image = [];
+    //check if an image id was provided
     if (req.body.image_id) {
+      //create associated image entry
       const newImage = {
         image_id: req.body.image_id,
         obituary: createdEntry[0].id,
       };
       const imageResult = await knex("deceased_bg").insert(newImage);
+      //find created image entry
       image = await knex("deceased_bg").select("*").where({
         id: imageResult[0],
       });
     }
+    //return a response with created entry and created image
     return res
       .status(201)
       .json({ message: "ok!", new_entry: createdEntry[0], image: image[0] });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Couldn't create new entry",
+      error: error,
+    });
+  }
+};
+
+exports.updateSingle = async (req, res) => {
+  try {
+    //req verification
+    if (typeof req.body.bg_version !== "boolean" || !req.body.date) {
+      return res.status(400).json({
+        status: 400,
+        message: "Bad request. Required information is missing.",
+      });
+    }
+    //find entry to update
+    existingEntry = await knex("obituary_bg")
+      .select("*")
+      .where({ en_id: req.params.id });
+    //return error if entry doesn't exist
+    if (existingEntry.length === 0) {
+      res.status(404).json({
+        status: 404,
+        message: "The entry you're trying to update doesn't exist",
+      });
+    }
+    //update entry
+    const entryChanges = {
+      name: req.body.name,
+      obituary: req.body.obituary,
+      years: req.body.years,
+      date: req.body.date,
+      bg_version: req.body.bg_version,
+    };
+    await knex("obituary_bg")
+      .where({ en_id: req.params.id })
+      .update(entryChanges);
+    //find updated entry
+    const updatedEntry = await knex("obituary_bg").select("*").where({
+      en_id: req.params.id,
+    });
+    //update image association
+    let image = [];
+    //check if image id was provided
+    if (req.body.image_id) {
+      //create associated image entry
+      const imageUpdate = {
+        image_id: req.body.image_id,
+        obituary: req.params.id,
+      };
+      //check if image entry already exists
+      const currentImage = await knex("deceased_bg").select("*").where({
+        obituary: req.params.id,
+      });
+      //if yes, update it
+      if (currentImage.length !== 0) {
+        await knex("deceased_bg")
+          .where({
+            obituary: req.params.id,
+          })
+          .update(imageUpdate);
+      }
+      //if no, create it
+      else {
+        await knex("deceased_bg").insert(imageUpdate);
+      }
+      //find created/updated image
+      image = await knex("deceased_bg").select("*").where({
+        obituary: req.params.id,
+      });
+    }
+    //return response with created entry and image
+    return res
+      .status(201)
+      .json({ message: "ok", updated_entry: updatedEntry[0], image: image[0] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Unable to update the entry",
       error: error,
     });
   }
@@ -142,9 +234,9 @@ exports.readPast = async (req, res) => {
       });
     }
     const sortedData = sortNewestToOldest(entryData);
-    const pastData = sortedData.filter((single)=>{
-      return single.date < req.params.date
-    })  
+    const pastData = sortedData.filter((single) => {
+      return single.date < req.params.date;
+    });
     res.status(200).json(pastData);
   } catch (error) {
     res.status(500).json({
@@ -173,93 +265,6 @@ exports.readDrafts = async (_req, res) => {
     res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
-      status: 500,
-      message: "There was an issue with the database",
-      error: error,
-    });
-  }
-};
-
-exports.updateSingle = async (req, res) => {
-  try {
-    existingEntry = await knex("obituary_bg")
-      .select("*")
-      .where({ en_id: req.params.id });
-
-    if (existingEntry.length === 0) {
-      res.status(404).json({
-        status: 404,
-        message: "The entry you're trying to update doesn't exist",
-      });
-    }
-    const entryChanges = {
-      name: req.body.name,
-      obituary: req.body.obituary,
-      years: req.body.years,
-      date: req.body.date,
-      bg_version: req.body.bg_version,
-    };
-
-    await knex("obituary_bg")
-      .where({ en_id: req.params.id })
-      .update(entryChanges);
-
-    const updatedEntry = await knex("obituary_bg").select("*").where({
-      en_id: req.params.id,
-    });
-
-    let image = [];
-    if (req.body.image_id) {
-      const imageUpdate = {
-        image_id: req.body.image_id,
-        obituary: req.params.id,
-      };
-      const currentImage = await knex("deceased_bg").select("*").where({
-        obituary: req.params.id,
-      });
-      if (currentImage.length !== 0) {
-        await knex("deceased_bg")
-          .where({
-            obituary: req.params.id,
-          })
-          .update(imageUpdate);
-      } else {
-        await knex("deceased_bg").insert(imageUpdate);
-      }
-      image = await knex("deceased_bg").select("*").where({
-        obituary: req.params.id,
-      });
-    }
-
-    return res
-      .status(201)
-      .json({ message: "ok", updated_entry: updatedEntry[0], image: image[0] });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: 500,
-      message: "Unable to update the entry",
-      error: error,
-    });
-  }
-};
-
-exports.deleteSingle = async (req, res) => {
-  try {
-    const existingEntry = await knex("obituary_bg")
-      .select("*")
-      .where({ en_id: req.params.id });
-    if (existingEntry.length === 0) {
-      return res.status(404).json({
-        status: 404,
-        message: "Couldn't find the entry you're trying to delete",
-      });
-    }
-    await knex("obituary_bg").where({ id: existingEntry[0].id }).del();
-    await knex("obituary").where({ id: req.params.id }).del();
-    return res.status(204).json({ status: 204, message: "Delete successful" });
-  } catch (error) {
-    return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
       error: error,

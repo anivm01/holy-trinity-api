@@ -3,23 +3,73 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 
 exports.create = async (req, res) => {
   try {
-    if (!req.body.en_id) {
+    //req verification
+    if (
+      !req.body.en_id ||
+      typeof req.body.bg_version !== "boolean" ||
+      !req.body.date
+    ) {
       return res.status(400).json({
         status: 400,
-        message: "Some required information is missing",
+        message: "Bad request. Required information is missing.",
       });
     }
-
+    //create new entry
     const newEntry = req.body;
     const result = await knex("event_bg").insert(newEntry);
+    //find created entry
     const createdEntry = await knex("event_bg").select("*").where({
       id: result[0],
     });
+    //return response with created entry
     return res.status(201).json({ message: "ok!", new_entry: createdEntry[0] });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Couldn't create new entry",
+      error: error,
+    });
+  }
+};
+
+exports.updateSingle = async (req, res) => {
+  try {
+    //req verification
+    if (typeof req.body.bg_version !== "boolean" || !req.body.date) {
+      return res.status(400).json({
+        status: 400,
+        message: "Bad request. Required information is missing.",
+      });
+    }
+    //find existing entry
+    existingEntry = await knex("event_bg")
+      .select("*")
+      .where({ en_id: req.params.id });
+    //send error if it doesn't exist
+    if (existingEntry.length === 0) {
+      res.status(404).json({
+        status: 404,
+        message: "The entry you're trying to update doesn't exist",
+      });
+    }
+    //update existing entry
+    const entryChanges = req.body;
+
+    await knex("event_bg")
+      .where({ id: existingEntry[0].id })
+      .update(entryChanges);
+    //find updated entry
+    const updatedEntry = await knex("event_bg").select("*").where({
+      id: existingEntry[0].id,
+    });
+    //return response with updated entry
+    return res.status(201).json(updatedEntry[0]);
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({
+      status: 500,
+      message: "Unable to update the entry",
       error: error,
     });
   }
@@ -200,13 +250,13 @@ exports.readPast = async (req, res) => {
         message: "Not Found: Couldn't find any entries.",
       });
     }
-    const sortedData = entryData.sort( (a,b) => {
+    const sortedData = entryData.sort((a, b) => {
       return new Date(b.event_date) - new Date(a.event_date);
-  })
+    });
     const pastData = sortedData.filter((single) => {
       return single.event_date < req.params.date;
     });
-    const latestData = pastData.slice(0, 5)
+    const latestData = pastData.slice(0, 5);
     return res.status(200).json(latestData);
   } catch (error) {
     res.status(500).json({
@@ -235,61 +285,6 @@ exports.readDrafts = async (_req, res) => {
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
-      status: 500,
-      message: "There was an issue with the database",
-      error: error,
-    });
-  }
-};
-
-exports.updateSingle = async (req, res) => {
-  try {
-    existingEntry = await knex("event_bg")
-      .select("*")
-      .where({ en_id: req.params.id });
-
-    if (existingEntry.length === 0) {
-      res.status(404).json({
-        status: 404,
-        message: "The entry you're trying to update doesn't exist",
-      });
-    }
-    const entryChanges = req.body;
-
-    await knex("event_bg")
-      .where({ id: existingEntry[0].id })
-      .update(entryChanges);
-
-    const updatedEntry = await knex("event_bg").select("*").where({
-      id: existingEntry[0].id,
-    });
-
-    return res.status(201).json(updatedEntry[0]);
-  } catch (error) {
-    return res.status(500).json({
-      status: 500,
-      message: "Unable to update the entry",
-      error: error,
-    });
-  }
-};
-
-exports.deleteSingle = async (req, res) => {
-  try {
-    const existingEntry = await knex("event_bg")
-      .select("*")
-      .where({ en_id: req.params.id });
-    if (existingEntry.length === 0) {
-      return res.status(404).json({
-        status: 404,
-        message: "Couldn't find the entry you're trying to delete",
-      });
-    }
-    await knex("event_bg").where({ id: existingEntry[0].id }).del();
-    await knex("event").where({ id: req.params.id }).del();
-    return res.status(204).json({ status: 204, message: "Delete successful" });
-  } catch (error) {
-    return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
       error: error,

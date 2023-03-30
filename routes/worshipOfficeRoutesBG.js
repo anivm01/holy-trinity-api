@@ -11,7 +11,6 @@ router
 .route("/:id")
 .get(worshipOfficeControllerBG.readSingle)
 .put(worshipOfficeControllerBG.updateSingle)
-.delete(worshipOfficeControllerBG.deleteSingle);
 
 
 module.exports = router;
