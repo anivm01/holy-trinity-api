@@ -15,7 +15,14 @@ exports.create = async (req, res) => {
       });
     }
     //create new entry
-    const newEntry = req.body;
+    const newEntry = {
+      date: req.body.date,
+      event_date: req.body.event_date,
+      title: req.body.title,
+      event_details: req.body.event_details,
+      bg_version: req.body.bg_version,
+      en_id: req.body.en_id
+    };
     const result = await knex("event_bg").insert(newEntry);
     //find created entry
     const createdEntry = await knex("event_bg").select("*").where({
@@ -54,7 +61,13 @@ exports.updateSingle = async (req, res) => {
       });
     }
     //update existing entry
-    const entryChanges = req.body;
+    const entryChanges = {
+      date: req.body.date,
+      event_date: req.body.event_date,
+      title: req.body.title,
+      event_details: req.body.event_details,
+      bg_version: req.body.bg_version,
+    };
 
     await knex("event_bg")
       .where({ id: existingEntry[0].id })

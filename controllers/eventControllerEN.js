@@ -11,7 +11,13 @@ exports.create = async (req, res) => {
       });
     }
     //create new entry
-    const newEntry = req.body;
+    const newEntry = {
+      date: req.body.date,
+      event_date: req.body.event_date,
+      title: req.body.title,
+      event_details: req.body.event_details,
+      is_draft: req.body.is_draft
+    };
     const result = await knex("event").insert(newEntry);
     //find new entry
     const createdEntry = await knex("event").select("*").where({
@@ -50,7 +56,13 @@ exports.updateSingle = async (req, res) => {
       });
     }
     //apply update
-    const entryChanges = req.body;
+    const entryChanges = {
+      date: req.body.date,
+      event_date: req.body.event_date,
+      title: req.body.title,
+      event_details: req.body.event_details,
+      is_draft: req.body.is_draft
+    };
     await knex("event").where({ id: req.params.id }).update(entryChanges);
     //find updated entry
     const updatedEntry = await knex("event").select("*").where({

@@ -12,7 +12,12 @@ exports.create = async (req, res) => {
       });
     }
     //create new entry
-    const newAnnouncement = req.body;
+    const newAnnouncement = {
+      date: req.body.date,
+      title: req.body.title,
+      announcement: req.body.announcement,
+      is_draft: req.body.is_draft
+    };
     const result = await knex("weekly_announcement").insert(newAnnouncement);
     //find new entry
     const createdAnnouncement = await knex("weekly_announcement")
@@ -57,7 +62,12 @@ exports.updateSingle = async (req, res) => {
       });
     }
     //update entry
-    const announcementChanges = req.body;
+    const announcementChanges = {
+      date: req.body.date,
+      title: req.body.title,
+      announcement: req.body.announcement,
+      is_draft: req.body.is_draft
+    };
     await knex("weekly_announcement")
       .where({ id: req.params.id })
       .update(announcementChanges);
