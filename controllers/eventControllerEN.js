@@ -176,7 +176,6 @@ exports.readUpcoming = async (req, res) => {
       .select("*")
       .from("event")
       .where({ is_draft: false });
-
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,

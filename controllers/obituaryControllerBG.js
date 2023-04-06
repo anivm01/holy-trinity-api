@@ -1,5 +1,8 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
+const { s3Client } = require("../utilities/s3Client.js");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
 
 exports.create = async (req, res) => {
   try {
@@ -100,17 +103,17 @@ exports.updateSingle = async (req, res) => {
       //create associated image entry
       const imageUpdate = {
         image_id: req.body.image_id,
-        obituary: req.params.id,
+        obituary: updatedEntry[0].id,
       };
       //check if image entry already exists
       const currentImage = await knex("deceased_bg").select("*").where({
-        obituary: req.params.id,
+        obituary: updatedEntry[0].id,
       });
       //if yes, update it
       if (currentImage.length !== 0) {
         await knex("deceased_bg")
           .where({
-            obituary: req.params.id,
+            obituary: updatedEntry[0].id,
           })
           .update(imageUpdate);
       }
@@ -120,7 +123,7 @@ exports.updateSingle = async (req, res) => {
       }
       //find created/updated image
       image = await knex("deceased_bg").select("*").where({
-        obituary: req.params.id,
+        obituary: updatedEntry[0].id,
       });
     }
     //return response with created entry and image
@@ -139,15 +142,37 @@ exports.updateSingle = async (req, res) => {
 
 exports.readSingle = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("obituary_bg")
-      .where({ en_id: req.params.id });
+    const entryData = await knex("obituary_bg")
+      .leftJoin("deceased_bg", { "deceased_bg.obituary": "obituary_bg.id" })
+      .leftJoin("images_bg", { "deceased_bg.image_id": "images_bg.id" })
+      .select(
+        "obituary_bg.id",
+        "obituary_bg.bg_version",
+        "obituary_bg.name",
+        "obituary_bg.years",
+        "obituary_bg.obituary",
+        "obituary_bg.date",
+        "obituary_bg.en_id",
+        "deceased_bg.image_id",
+        "images_bg.url",
+        "images_bg.description"
+      )
+      .where({ "obituary_bg.en_id": req.params.id })
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
         message: "Coundn't find the entry you were looking for",
       });
+    }
+    if (entryData[0].url !== null) {
+      entryData[0].src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: entryData[0].url,
+        }),
+        { expiresIn: 120 } // 120 seconds
+      );
     }
     return res.json(entryData[0]);
   } catch (error) {
@@ -214,8 +239,9 @@ exports.readPublished = async (_req, res) => {
 exports.readPast = async (req, res) => {
   try {
     const entryData = await knex("obituary_bg")
-      .where({ bg_version: true })
-      .join("obituary", { "obituary_bg.en_id": "obituary.id" })
+      .leftJoin("obituary", { "obituary_bg.en_id": "obituary.id" })
+      .leftJoin("deceased_bg", { "deceased_bg.obituary": "obituary_bg.id" })
+      .leftJoin("images_bg", { "deceased_bg.image_id": "images_bg.id" })
       .select(
         "obituary_bg.id",
         "obituary_bg.bg_version",
@@ -223,10 +249,13 @@ exports.readPast = async (req, res) => {
         "obituary_bg.years",
         "obituary_bg.obituary",
         "obituary_bg.date",
-        "obituary_bg.en_id"
+        "obituary_bg.en_id",
+        "images_bg.url",
+        "images_bg.description"
       )
+      .where({ "obituary_bg.bg_version": true })
       .where({ "obituary.is_draft": false });
-
+    console.log(entryData);
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -237,6 +266,18 @@ exports.readPast = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
+    for (let single of pastData) {
+      if (single.url !== null) {
+        single.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: single.url,
+          }),
+          { expiresIn: 120 } // 120 seconds
+        );
+      }
+    }
     res.status(200).json(pastData);
   } catch (error) {
     res.status(500).json({

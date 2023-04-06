@@ -1,5 +1,8 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
+const { s3Client } = require("../utilities/s3Client.js");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
 
 exports.create = async (req, res) => {
   try {
@@ -121,7 +124,7 @@ exports.updateSingle = async (req, res) => {
       .status(201)
       .json({ message: "ok", updated_entry: updatedEntry[0], image: image[0] });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Unable to update the entry",
@@ -146,7 +149,7 @@ exports.deleteSingle = async (req, res) => {
     await knex("obituary").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
@@ -157,16 +160,37 @@ exports.deleteSingle = async (req, res) => {
 
 exports.readSingle = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("obituary")
-      .where({ id: req.params.id });
+    const entryData = await knex("obituary")
+      .leftJoin("deceased", { "deceased.obituary": "obituary.id" })
+      .leftJoin("images", { "deceased.image_id": "images.id" })
+      .select(
+        "obituary.id",
+        "obituary.name",
+        "obituary.years",
+        "obituary.obituary",
+        "obituary.date",
+        "deceased.image_id",
+        "images.url",
+        "images.description"
+      )
+      .where({ "obituary.id": req.params.id });
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
         message: "Coundn't find the entry you were looking for",
       });
+    }    
+    if (entryData[0].url !== null) {
+      entryData[0].src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: entryData[0].url,
+        }),
+        { expiresIn: 120 } // 120 seconds
+      );
     }
+    console.log(entryData[0])
     return res.json(entryData[0]);
   } catch (error) {
     return res.status(500).json({
@@ -223,11 +247,19 @@ exports.readPublished = async (_req, res) => {
 
 exports.readPast = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("obituary")
-      .where({ is_draft: false });
-
+    const entryData = await knex("obituary")
+      .leftJoin("deceased", { "deceased.obituary": "obituary.id" })
+      .leftJoin("images", { "deceased.image_id": "images.id" })
+      .select(
+        "obituary.id",
+        "obituary.name",
+        "obituary.years",
+        "obituary.date",
+        "obituary.obituary",
+        "images.url",
+        "images.description"
+      )
+      .where({ "obituary.is_draft": false });
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -238,7 +270,28 @@ exports.readPast = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
-    res.status(200).json(pastData);
+    const removedEmpty = pastData.filter((single) => {
+      return (
+        single.name.length != null &&
+        single.name !== false &&
+        single.name !== "" &&
+        single.obituary.length > 7
+      );
+    });
+    for (let single of removedEmpty) {
+      if (single.url !== null) {
+        single.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: single.url,
+          }),
+          { expiresIn: 120 } // 120 seconds
+        );
+      }
+    }
+    console.log(removedEmpty)
+    res.status(200).json(removedEmpty);
   } catch (error) {
     res.status(500).json({
       status: 500,

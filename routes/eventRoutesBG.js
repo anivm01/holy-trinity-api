@@ -1,16 +1,17 @@
 const router = require ("express").Router()
 const eventControllerBG = require("../controllers/eventControllerBG")
+const authorizeAdmin = require("../middleware/authorizeAdmin")
 
 router
 .route("/")
 .get(eventControllerBG.readAll)
-.post(eventControllerBG.create);
+.post(authorizeAdmin, eventControllerBG.create);
 
 
 router
 .route("/:id")
 .get(eventControllerBG.readSingle)
-.put(eventControllerBG.updateSingle)
+.put(authorizeAdmin, eventControllerBG.updateSingle)
 
 
 module.exports = router;

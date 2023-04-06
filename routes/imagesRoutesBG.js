@@ -1,10 +1,8 @@
 const router = require ("express").Router()
-const imagesController = require("../controllers/imagesControllerBG")
-const multer = require('multer');
-const upload = multer({ dest: 'images/' })
+const imagesControllerBG = require("../controllers/imagesControllerBG")
 
 router
 .route("/:id")
-.get(imagesController.readSingle)
+.get(imagesControllerBG.readSingle)
 
 module.exports = router;

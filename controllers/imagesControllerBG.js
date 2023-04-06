@@ -1,6 +1,18 @@
 const knex = require("knex")(require("../knexfile"));
 const { GetObjectCommand } = require("@aws-sdk/client-s3") 
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { S3Client } = require("@aws-sdk/client-s3");
+require("dotenv").config();
+
+const s3Client = new S3Client({
+  forcePathStyle: false, // Configures to use subdomain/virtual calling format.
+  endpoint: "https://nyc3.digitaloceanspaces.com",
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+  },
+});
 
 exports.readSingle = async (req, res) => {
   try {
@@ -25,6 +37,7 @@ exports.readSingle = async (req, res) => {
     );
     return res.json(image);
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",

@@ -6,7 +6,6 @@ exports.create = async (req, res) => {
     //req verification
     if (
       !req.body.en_id ||
-      typeof req.body.bg_version !== "boolean" ||
       !req.body.date
     ) {
       return res.status(400).json({
@@ -20,7 +19,6 @@ exports.create = async (req, res) => {
       event_date: req.body.event_date,
       title: req.body.title,
       event_details: req.body.event_details,
-      bg_version: req.body.bg_version,
       en_id: req.body.en_id
     };
     const result = await knex("event_bg").insert(newEntry);
@@ -66,7 +64,6 @@ exports.updateSingle = async (req, res) => {
       event_date: req.body.event_date,
       title: req.body.title,
       event_details: req.body.event_details,
-      bg_version: req.body.bg_version,
     };
 
     await knex("event_bg")
@@ -139,12 +136,10 @@ exports.readPublished = async (_req, res) => {
         "event_bg.event_date",
         "event_bg.date",
         "event_bg.en_id",
-        "event_bg.id",
-        "event_bg.bg_version"
+        "event_bg.id"
       )
       .innerJoin("event", { "event.id": "event_bg.en_id" })
-      .where({ "event.is_draft": false })
-      .where({ "event_bg.bg_version": true });
+      .where({ "event.is_draft": false });
 
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -173,11 +168,9 @@ exports.readUpcoming = async (req, res) => {
         "event_bg.date",
         "event_bg.en_id",
         "event_bg.id",
-        "event_bg.bg_version"
       )
       .innerJoin("event", { "event.id": "event_bg.en_id" })
-      .where({ "event.is_draft": false })
-      .where({ "event_bg.bg_version": true });
+      .where({ "event.is_draft": false });
 
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -211,12 +204,10 @@ exports.readSingleClosestUpcoming = async (req, res) => {
         "event_bg.event_date",
         "event_bg.date",
         "event_bg.en_id",
-        "event_bg.id",
-        "event_bg.bg_version"
+        "event_bg.id"
       )
       .innerJoin("event", { "event.id": "event_bg.en_id" })
-      .where({ "event.is_draft": false })
-      .where({ "event_bg.bg_version": true });
+      .where({ "event.is_draft": false });
 
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -250,12 +241,10 @@ exports.readPast = async (req, res) => {
         "event_bg.event_date",
         "event_bg.date",
         "event_bg.en_id",
-        "event_bg.id",
-        "event_bg.bg_version"
+        "event_bg.id"
       )
       .innerJoin("event", { "event.id": "event_bg.en_id" })
-      .where({ "event.is_draft": false })
-      .where({ "event_bg.bg_version": true });
+      .where({ "event.is_draft": false });
 
     if (entryData.length === 0) {
       return res.status(404).json({

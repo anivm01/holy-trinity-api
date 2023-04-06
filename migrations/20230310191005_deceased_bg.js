@@ -14,7 +14,7 @@ exports.up = function (knex) {
     table
       .integer("obituary")
       .unsigned()
-      .references("obituary_bg.en_id")
+      .references("obituary_bg.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
   });

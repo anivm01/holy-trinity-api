@@ -1,13 +1,16 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
+const { s3Client } = require("../utilities/s3Client.js")
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
 
 exports.create = async (req, res) => {
   try {
     //req verification
-    if(typeof(req.body.is_draft) !== 'boolean' || !req.body.date) {
+    if (typeof req.body.is_draft !== "boolean" || !req.body.date) {
       return res.status(400).json({
         status: 400,
-        message: "Bad request. Required information is missing."
+        message: "Bad request. Required information is missing.",
       });
     }
     //create new entry
@@ -26,13 +29,13 @@ exports.create = async (req, res) => {
     });
 
     //create associated image if one is provided
-    let image = []
+    let image = [];
     //check if image is provided
-    if(req.body.featured_img_id){
+    if (req.body.featured_img_id) {
       const newImage = {
         image_id: req.body.featured_img_id,
         article: createdEntry[0].id,
-      }
+      };
       //create associate image entry
       const imageResult = await knex("featured_images").insert(newImage);
       image = await knex("featured_images").select("*").where({
@@ -40,14 +43,15 @@ exports.create = async (req, res) => {
       });
     }
 
-   //send response
-    return res
-      .status(201)
-      .json({ message: "Entry successfully created", new_entry: createdEntry[0], image: image[0]});
-
+    //send response
+    return res.status(201).json({
+      message: "Entry successfully created",
+      new_entry: createdEntry[0],
+      image: image[0],
+    });
   } catch (error) {
     //log out the error
-    console.log(error)
+    console.log(error);
 
     //send error response
     return res.status(500).json({
@@ -61,56 +65,62 @@ exports.create = async (req, res) => {
 exports.updateSingle = async (req, res) => {
   try {
     //req verification
-    if(!req.body.date || typeof(req.body.is_draft) !== 'boolean') {
+    if (!req.body.date || typeof req.body.is_draft !== "boolean") {
       return res.status(400).json({
         status: 400,
-        message: "Bad request. Required information is missing."
+        message: "Bad request. Required information is missing.",
       });
     }
     //create entry update
-      const entryUpdate = {
-        title: req.body.title,
-        author: req.body.author,
-        content: req.body.content,
-        is_draft: req.body.is_draft,
-        date: req.body.date,
-      };
+    const entryUpdate = {
+      title: req.body.title,
+      author: req.body.author,
+      content: req.body.content,
+      is_draft: req.body.is_draft,
+      date: req.body.date,
+    };
 
     await knex("article").where({ id: req.params.id }).update(entryUpdate);
 
     //find updated entry
     const updatedVersion = await knex("article").select("*").where({
-      id: req.params.id
+      id: req.params.id,
     });
 
     // update image
-    let image
+    let image;
     //check if image id has been provided
-    if(req.body.featured_img_id) {
+    if (req.body.featured_img_id) {
       //check if this entry already has an associated image
       const imageUpdate = {
         image_id: req.body.featured_img_id,
-        article: req.params.id
-      }
+        article: req.params.id,
+      };
       const featuredImage = await knex("featured_images").select("*").where({
         article: req.params.id,
       });
       //if yes update the image id
-      if(featuredImage.length > 0) {
-        await knex("featured_images").where({ id: featuredImage[0].id }).update(imageUpdate)
+      if (featuredImage.length > 0) {
+        await knex("featured_images")
+          .where({ id: featuredImage[0].id })
+          .update(imageUpdate);
       }
-      //if no create a new associated image entry 
+      //if no create a new associated image entry
       else {
-        await knex("featured_images").insert(imageUpdate)
+        await knex("featured_images").insert(imageUpdate);
       }
-      image =  await knex("featured_images").select("*").where({
+      image = await knex("featured_images").select("*").where({
         article: req.params.id,
       });
     }
     //send response
-    return res.status(201).json({message: "ok", updated_entry: updatedVersion[0], image: image[0]});
+    return res.status(201).json({
+      message: "ok",
+      updated_entry: updatedVersion[0],
+      image: image[0],
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Unable to update the entry",
@@ -144,16 +154,37 @@ exports.deleteSingle = async (req, res) => {
 
 exports.readSingle = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("article")
-      .where({ id: req.params.id });
+    const entryData = await knex("article")
+    .leftJoin("featured_images", { "featured_images.article": "article.id" })
+    .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .select(
+        "article.id",
+        "article.title",
+        "article.author",
+        "article.content",
+        "article.date",
+        "featured_images.image_id",
+        "images.url",
+        "images.description"
+      )
+      .where({ "article.id": req.params.id });
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
         message: "Coundn't find the entry you were looking for",
       });
     }
+    if (entryData[0].url !== null) {
+      entryData[0].src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: entryData[0].url
+        }),
+        { expiresIn: 120 }// 120 seconds
+      )
+    }
+    console.log(entryData[0])
     return res.json(entryData[0]);
   } catch (error) {
     return res.status(500).json({
@@ -197,6 +228,7 @@ exports.readPublished = async (_req, res) => {
       });
     }
     const sortedData = sortNewestToOldest(entryData);
+
     return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
@@ -209,10 +241,19 @@ exports.readPublished = async (_req, res) => {
 
 exports.readPast = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("article")
-      .where({ is_draft: false });
+    const entryData = await knex("article")
+      .leftJoin("featured_images", { "featured_images.article": "article.id" })
+      .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .select(
+        "article.id",
+        "article.title",
+        "article.author",
+        "article.content",
+        "article.date",
+        "images.url",
+        "images.description"
+      )
+      .where({ "article.is_draft": false });
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -223,7 +264,28 @@ exports.readPast = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
-    return res.status(200).json(pastData);
+    const removedEmpty = pastData.filter((single) => {
+      return (
+        single.title !== null &&
+        single.title !== false &&
+        single.title !== "" &&
+        single.content.length > 7
+      );
+    });
+    
+    for (let single of removedEmpty) {
+      if(single.url !== null) {
+        single.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: single.url
+          }),
+          { expiresIn: 120 }// 120 seconds
+        )
+      }
+    }
+    return res.status(200).json(removedEmpty);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -235,9 +297,18 @@ exports.readPast = async (req, res) => {
 
 exports.readLatest = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("article")
+    const entryData = await knex("article")
+    .leftJoin("featured_images", { "featured_images.article": "article.id" })
+    .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .select(
+        "article.id",
+        "article.title",
+        "article.author",
+        "article.content",
+        "article.date",
+        "images.url",
+        "images.description"
+      )
       .where({ is_draft: false });
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -249,12 +320,30 @@ exports.readLatest = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
-    let latestData = []
-    if(pastData.length > 6){
-      latestData = pastData.slice(0, 6)
-    }else(
-      latestData = pastData
-    )    
+    const removedEmpty = pastData.filter((single) => {
+      return (
+        single.title.length != null &&
+        single.title !== false &&
+        single.title !== "" &&
+        single.content.length > 7
+      );
+    });
+    let latestData = [];
+    if (removedEmpty.length > 9) {
+      latestData = removedEmpty.slice(0, 9);
+    } else latestData = removedEmpty;
+    for (let single of latestData) {
+      if(single.url !== null) {
+        single.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: single.url
+          }),
+          { expiresIn: 120 }// 120 seconds
+        )
+      }
+    }
     return res.status(200).json(latestData);
   } catch (error) {
     res.status(500).json({
@@ -271,14 +360,14 @@ exports.readDrafts = async (_req, res) => {
       .select("*")
       .from("article")
       .where({ is_draft: true });
-if (entryData.length === 0) {
+    if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
         message: "Not Found: Couldn't find any entries.",
       });
     }
-      const sortedData = sortNewestToOldest(entryData);
-      return res.status(200).json(sortedData);
+    const sortedData = sortNewestToOldest(entryData);
+    return res.status(200).json(sortedData);
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -287,5 +376,3 @@ if (entryData.length === 0) {
     });
   }
 };
-
-

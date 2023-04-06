@@ -1,17 +1,18 @@
 const router = require ("express").Router()
 const worshipOfficeController = require("../controllers/worshipOfficeControllerEN")
+const authorizeAdmin = require("../middleware/authorizeAdmin")
 
 router
 .route("/")
 .get(worshipOfficeController.readAll)
-.post(worshipOfficeController.create);
+.post(authorizeAdmin, worshipOfficeController.create);
 
 
 router
 .route("/:id")
 .get(worshipOfficeController.readSingle)
-.put(worshipOfficeController.updateSingle)
-.delete(worshipOfficeController.deleteSingle);
+.put(authorizeAdmin, worshipOfficeController.updateSingle)
+.delete(authorizeAdmin, worshipOfficeController.deleteSingle);
 
 
 module.exports = router;

@@ -5,7 +5,6 @@
 exports.up = function(knex) {
     return knex.schema.createTable("worship_office_bg", function(table) {
         table.increments("id").primary();
-        table.boolean("bg_version");
         table.string('title');
         table.text('gospel');
         table.text('epistle');

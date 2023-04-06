@@ -1,14 +1,13 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
+const { s3Client } = require("../utilities/s3Client.js")
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
 
 exports.create = async (req, res) => {
   try {
     //req verification
-    if (
-      typeof req.body.bg_version !== "boolean" ||
-      !req.body.en_id ||
-      !req.body.date
-    ) {
+    if (!req.body.en_id || !req.body.date) {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing.",
@@ -22,7 +21,6 @@ exports.create = async (req, res) => {
       old_testament: req.body.old_testament,
       youtube_video_id: req.body.youtube_video_id,
       date: req.body.date,
-      bg_version: req.body.bg_version,
       en_id: req.body.en_id,
     };
     const result = await knex("worship_office_bg").insert(newEntry);
@@ -38,7 +36,7 @@ exports.create = async (req, res) => {
       //create image entry
       const newImage = {
         image_id: req.body.thumbnail_id,
-        worship_office: req.body.en_id,
+        worship_office: createdEntry[0].id,
       };
       const imageResult = await knex("thumbnails_bg").insert(newImage);
       //find created image entry
@@ -62,7 +60,7 @@ exports.create = async (req, res) => {
 
 exports.updateSingle = async (req, res) => {
   try {
-    if (typeof req.body.bg_version !== "boolean" || !req.body.date) {
+    if (!req.body.date) {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing.",
@@ -87,7 +85,6 @@ exports.updateSingle = async (req, res) => {
       old_testament: req.body.old_testament,
       youtube_video_id: req.body.youtube_video_id,
       date: req.body.date,
-      bg_version: req.body.bg_version,
     };
 
     await knex("worship_office_bg")
@@ -104,11 +101,11 @@ exports.updateSingle = async (req, res) => {
       //create image entry
       const imageUpdate = {
         image_id: req.body.thumbnail_id,
-        worship_office: req.params.id,
+        worship_office: updatedEntry[0].id,
       };
       //check if image entry already exists
       const thumbnail = await knex("thumbnails_bg").select("*").where({
-        worship_office: req.params.id,
+        worship_office: updatedEntry[0].id,
       });
       //if yes update it
       if (thumbnail.length !== 0) {
@@ -122,7 +119,7 @@ exports.updateSingle = async (req, res) => {
       }
       //find image entry
       image = await knex("thumbnails_bg").select("*").where({
-        worship_office: req.params.id,
+        worship_office: updatedEntry[0].id,
       });
     }
     //return response with updated entry and image
@@ -181,13 +178,11 @@ exports.readAll = async (_req, res) => {
 exports.readPublished = async (_req, res) => {
   try {
     const entryData = await knex("worship_office_bg")
-      .where({ bg_version: true })
       .join("worship_office", {
         "worship_office_bg.en_id": "worship_office.id",
       })
       .select(
         "worship_office_bg.id",
-        "worship_office_bg.bg_version",
         "worship_office_bg.title",
         "worship_office_bg.gospel",
         "worship_office_bg.epistle",
@@ -206,6 +201,7 @@ exports.readPublished = async (_req, res) => {
     const sortedData = sortNewestToOldest(entryData);
     return res.status(200).json(sortedData);
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
@@ -217,22 +213,26 @@ exports.readPublished = async (_req, res) => {
 exports.readPast = async (req, res) => {
   try {
     const entryData = await knex("worship_office_bg")
-      .where({ bg_version: true })
       .join("worship_office", {
         "worship_office_bg.en_id": "worship_office.id",
       })
+      .leftJoin("thumbnails_bg", {
+        "thumbnails_bg.worship_office": "worship_office_bg.id",
+      })
+      .leftJoin("images_bg", {"images_bg.en_id": "thumbnails_bg.image_id"})
       .select(
         "worship_office_bg.id",
-        "worship_office_bg.bg_version",
         "worship_office_bg.title",
         "worship_office_bg.gospel",
         "worship_office_bg.epistle",
         "worship_office_bg.old_testament",
         "worship_office_bg.youtube_video_id",
         "worship_office_bg.date",
-        "worship_office_bg.en_id"
+        "worship_office_bg.en_id",
+        "images_bg.url",
+        "images_bg.description"
       )
-      .where({ "worship_office.is_draft": false });
+      .where({ "worship_office.is_draft": false })
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -243,6 +243,16 @@ exports.readPast = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
+    for (let single of pastData) {
+      single.src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: single.url
+        }),
+        { expiresIn: 120 }// 120 seconds
+      )
+    }
     return res.status(200).json(pastData);
   } catch (error) {
     res.status(500).json({
@@ -256,22 +266,26 @@ exports.readPast = async (req, res) => {
 exports.readLatest = async (req, res) => {
   try {
     const entryData = await knex("worship_office_bg")
-      .where({ bg_version: true })
       .join("worship_office", {
         "worship_office_bg.en_id": "worship_office.id",
       })
+      .join("thumbnails_bg", {
+        "thumbnails_bg.worship_office": "worship_office_bg.id",
+      })
+      .join("images_bg", {"images_bg.en_id": "thumbnails_bg.image_id"})
       .select(
         "worship_office_bg.id",
-        "worship_office_bg.bg_version",
         "worship_office_bg.title",
         "worship_office_bg.gospel",
         "worship_office_bg.epistle",
         "worship_office_bg.old_testament",
         "worship_office_bg.youtube_video_id",
         "worship_office_bg.date",
-        "worship_office_bg.en_id"
+        "worship_office_bg.en_id",
+        "images_bg.url",
+        "images_bg.description"
       )
-      .where({ "worship_office.is_draft": false });
+      .where({ "worship_office.is_draft": false })
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -282,8 +296,17 @@ exports.readLatest = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
+    pastData[0].src = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: "holy-trinity-image-storage",
+        Key: pastData[0].url
+      }),
+      { expiresIn: 120 }// 120 seconds
+    )
     return res.status(200).json(pastData[0]);
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
@@ -295,11 +318,19 @@ exports.readLatest = async (req, res) => {
 exports.readDrafts = async (_req, res) => {
   try {
     const entryData = await knex("worship_office_bg")
-      .where({ bg_version: true })
       .join("worship_office", {
         "worship_office_bg.en_id": "worship_office.id",
       })
-      .select("*")
+      .select(
+        "worship_office_bg.id",
+        "worship_office_bg.title",
+        "worship_office_bg.gospel",
+        "worship_office_bg.epistle",
+        "worship_office_bg.old_testament",
+        "worship_office_bg.youtube_video_id",
+        "worship_office_bg.date",
+        "worship_office_bg.en_id"
+      )
       .where({ "worship_office.is_draft": true });
 
     if (entryData.length === 0) {

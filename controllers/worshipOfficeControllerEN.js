@@ -1,5 +1,9 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
+const { s3Client } = require("../utilities/s3Client.js")
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+
 
 exports.create = async (req, res) => {
   try {
@@ -151,7 +155,7 @@ exports.deleteSingle = async (req, res) => {
     await knex("worship_office").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "There was an issue with the database",
@@ -222,10 +226,22 @@ exports.readPublished = async (_req, res) => {
 
 exports.readPast = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("worship_office")
+    const entryData = await knex("worship_office")
+      .leftJoin("thumbnails", { "thumbnails.worship_office": "worship_office.id" })
+      .leftJoin("images", {"images.id": "thumbnails.image_id"})
+      .select(
+        "worship_office.id",
+        "worship_office.title",
+        "worship_office.gospel",
+        "worship_office.epistle",
+        "worship_office.old_testament",
+        "worship_office.youtube_video_id",
+        "worship_office.date",
+        "images.url",
+        "images.description"
+      )
       .where({ is_draft: false });
+      console.log(entryData)
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -236,6 +252,18 @@ exports.readPast = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
+    for (let single of pastData) {
+      if(single.url !== null) {
+        single.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: single.url
+          }),
+          { expiresIn: 120 }// 120 seconds
+        )
+      }
+    }
     return res.status(200).json(pastData);
   } catch (error) {
     res.status(500).json({
@@ -248,9 +276,20 @@ exports.readPast = async (req, res) => {
 
 exports.readLatest = async (req, res) => {
   try {
-    const entryData = await knex
-      .select("*")
-      .from("worship_office")
+    const entryData = await knex("worship_office")
+      .leftJoin("thumbnails", { "thumbnails.worship_office": "worship_office.id" })
+      .leftJoin("images", {"images.id": "thumbnails.image_id"})
+      .select(
+        "worship_office.id",
+        "worship_office.title",
+        "worship_office.gospel",
+        "worship_office.epistle",
+        "worship_office.old_testament",
+        "worship_office.youtube_video_id",
+        "worship_office.date",
+        "images.url",
+        "images.description"
+      )
       .where({ is_draft: false });
     if (entryData.length === 0) {
       return res.status(404).json({
@@ -262,6 +301,16 @@ exports.readLatest = async (req, res) => {
     const pastData = sortedData.filter((single) => {
       return single.date < req.params.date;
     });
+    if(pastData[0].url !== null) {
+      pastData[0].src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: pastData[0].url
+        }),
+        { expiresIn: 120 }// 120 seconds
+      )
+    }
     return res.status(200).json(pastData[0]);
   } catch (error) {
     res.status(500).json({

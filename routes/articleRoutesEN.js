@@ -1,16 +1,17 @@
 const router = require ("express").Router()
 const articleController = require("../controllers/articleControllerEN")
+const authorizeAdmin = require("../middleware/authorizeAdmin")
 
 router
 .route("/")
 .get(articleController.readAll)
-.post(articleController.create);
+.post(authorizeAdmin, articleController.create);
 
 router
 .route("/:id")
 .get(articleController.readSingle)
-.put(articleController.updateSingle)
-.delete(articleController.deleteSingle);
+.put(authorizeAdmin, articleController.updateSingle)
+.delete(authorizeAdmin, articleController.deleteSingle);
 
 
 module.exports = router;

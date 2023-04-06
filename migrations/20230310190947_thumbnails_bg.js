@@ -14,7 +14,7 @@ exports.up = function (knex) {
     table
       .integer("worship_office")
       .unsigned()
-      .references("worship_office_bg.en_id")
+      .references("worship_office_bg.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
   });
