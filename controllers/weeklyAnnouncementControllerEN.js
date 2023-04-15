@@ -26,9 +26,11 @@ exports.create = async (req, res) => {
         id: result[0],
       });
     //return response with new entry
+    console.log("weekly announcement created")
     return res
       .status(201)
       .json({ message: "ok!", new_entry: createdAnnouncement[0] });
+     
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -78,6 +80,7 @@ exports.updateSingle = async (req, res) => {
         id: req.params.id,
       });
     //send response with unpdated entry
+    console.log("weekly announcement updated")
     return res.status(201).json(updatedAnnouncement[0]);
   } catch (error) {
     console.log(error);
