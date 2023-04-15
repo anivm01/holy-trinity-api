@@ -7,6 +7,8 @@ const PORT = process.env.PORT || 8080;
 //user routes
 const userRoutes = require("./routes/userRoutes.js")
 
+const contactRoutes = require("./routes/contactRoutes.js")
+
 //image only routes
 const imagesRoutesEN = require("./routes/imagesRoutesEN.js")
 const imagesRoutesBG = require("./routes/imagesRoutesBG.js")
@@ -50,6 +52,7 @@ app.use(cors());
 
 //routes
 app.use("/users", userRoutes)
+app.use("/contact", contactRoutes)
 
 app.use("/weekly-announcement/en", weeklyAnnouncementRoutesEN)
 app.use("/weekly-announcement/bg", weeklyAnnouncementRoutesBG)

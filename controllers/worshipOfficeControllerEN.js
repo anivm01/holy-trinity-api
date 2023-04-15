@@ -241,7 +241,6 @@ exports.readPast = async (req, res) => {
         "images.description"
       )
       .where({ is_draft: false });
-      console.log(entryData)
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
