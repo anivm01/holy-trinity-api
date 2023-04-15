@@ -84,5 +84,5 @@ app.use("/drafts/en", draftRoutesEN)
 app.use("/drafts/bg", draftRoutesBG)
 
 app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
+    console.log(`Server listening`);
 });

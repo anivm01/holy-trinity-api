@@ -4,7 +4,6 @@ require("dotenv").config();
 
 module.exports = async (req, res, next) => {
   const bearerTokenString = req.headers.authorization;
-
   if (!bearerTokenString) {
     return res
       .status(401)
@@ -20,6 +19,7 @@ module.exports = async (req, res, next) => {
   }
 
   const token = splitBearerTokenString[1];
+  
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
