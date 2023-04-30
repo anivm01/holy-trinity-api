@@ -45,6 +45,18 @@ exports.create = async (req, res) => {
         id: imageResult[0],
       });
     }
+
+    let gallery = [];
+    if (req.body.gallery.length > 0) {
+      const images = req.body.gallery;
+      for (image of images) {
+        gallery = await knex("article_image_gallery_bg").insert({
+          image_id: image,
+          article_bg: createdEntry[0].id,
+        });
+      }
+    }
+
     //send response
     return res
       .status(201)
@@ -112,6 +124,34 @@ exports.updateSingle = async (req, res) => {
         article: updatedEntry[0].id,
       });
     }
+
+    //update gallery
+    let gallery = [];
+    if (req.body.gallery.length > 0) {
+      const images = req.body.gallery;
+      const existingImages = await knex("article_image_gallery_bg")
+        .select("*")
+        .where({ article_bg: updatedEntry[0].id });
+      if (existingImages.length > 0) {
+        await knex("article_image_gallery_bg")
+          .where({ article_bg: updatedEntry[0].id })
+          .del();
+        for (image of images) {
+          gallery = await knex("article_image_gallery_bg").insert({
+            image_id: image,
+            article_bg: updatedEntry[0].id,
+          });
+        }
+      } else {
+        for (image of images) {
+          gallery = await knex("article_image_gallery_bg").insert({
+            image_id: image,
+            article_bg: updatedEntry[0].id,
+          });
+        }
+      }
+    }
+
     //send response
     return res
       .status(201)
@@ -145,7 +185,7 @@ exports.readSingle = async (req, res) => {
         "images_bg.url",
         "images_bg.description"
       )
-      .where({ "article_bg.en_id": req.params.id })
+      .where({ "article_bg.en_id": req.params.id });
     if (entryData.length === 0) {
       return res.status(404).json({
         status: 404,
@@ -157,12 +197,30 @@ exports.readSingle = async (req, res) => {
         s3Client,
         new GetObjectCommand({
           Bucket: "holy-trinity-image-storage",
-          Key: entryData[0].url
+          Key: entryData[0].url,
         }),
-        { expiresIn: 120 }// 120 seconds
-      )
+        { expiresIn: 120 } // 120 seconds
+      );
     }
-    return res.json(entryData[0]);
+    const gallery = await knex("article_image_gallery_bg")
+      .where({ article_bg: entryData[0].id })
+      .leftJoin("images_bg", {
+        "article_image_gallery_bg.image_id": "images_bg.id",
+      })
+      .select("images_bg.url", "images_bg.description", "images_bg.id");
+    if (gallery.length > 0) {
+      for (image of gallery) {
+        image.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: image.url,
+          }),
+          { expiresIn: 120 } // 120 seconds
+        );
+      }
+    }
+    return res.json({ entry_data: entryData[0], image_gallery: gallery });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

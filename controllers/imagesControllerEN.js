@@ -94,7 +94,7 @@ exports.readAll = async (_req, res) => {
         Bucket: "holy-trinity-image-storage",
         Key: image.url
       }),
-      { expiresIn: 60 }// 60 seconds
+      { expiresIn: 120 }// 120 seconds
     )
   }
 
@@ -127,7 +127,7 @@ exports.readSingle = async (req, res) => {
         Bucket: "holy-trinity-image-storage",
         Key: image.url
       }),
-      { expiresIn: 60 }// 60 seconds
+      { expiresIn: 120 }// 120 seconds
     )
     return res.json(image);
   } catch (error) {

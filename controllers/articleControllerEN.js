@@ -1,7 +1,7 @@
 const knex = require("knex")(require("../knexfile"));
 const { sortNewestToOldest } = require("../utilities/sort.js");
-const { s3Client } = require("../utilities/s3Client.js")
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { s3Client } = require("../utilities/s3Client.js");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
 
 exports.create = async (req, res) => {
@@ -42,12 +42,23 @@ exports.create = async (req, res) => {
         image_id: imageResult[0],
       });
     }
+    let gallery = [];
+    if (req.body.gallery.length > 0) {
+      const images = req.body.gallery;
+      for (image of images) {
+        gallery = await knex("article_image_gallery").insert({
+          image_id: image,
+          article: createdEntry[0].id,
+        });
+      }
+    }
 
     //send response
     return res.status(201).json({
       message: "Entry successfully created",
       new_entry: createdEntry[0],
       image: image[0],
+      gallery: gallery,
     });
   } catch (error) {
     //log out the error
@@ -90,6 +101,9 @@ exports.updateSingle = async (req, res) => {
     // update image
     let image;
     //check if image id has been provided
+    if(!req.body.featured_img_id) {
+      await knex("featured_images").where({article: req.params.id}).del()
+    }
     if (req.body.featured_img_id) {
       //check if this entry already has an associated image
       const imageUpdate = {
@@ -113,11 +127,41 @@ exports.updateSingle = async (req, res) => {
         article: req.params.id,
       });
     }
+
+    //update gallery
+
+    let gallery = [];
+    if (req.body.gallery.length > 0) {
+      const images = req.body.gallery;
+      const existingImages = await knex("article_image_gallery")
+        .select("*")
+        .where({ article: req.params.id });
+      if (existingImages.length > 0) {
+        await knex("article_image_gallery")
+          .where({ article: req.params.id })
+          .del();
+        for (image of images) {
+          gallery = await knex("article_image_gallery").insert({
+            image_id: image,
+            article: req.params.id,
+          });
+        }
+      } else {
+        for (image of images) {
+          gallery = await knex("article_image_gallery").insert({
+            image_id: image,
+            article: req.params.id,
+          });
+        }
+      }
+    }
+
     //send response
     return res.status(201).json({
       message: "ok",
       updated_entry: updatedVersion[0],
       image: image[0],
+      gallery: gallery,
     });
   } catch (error) {
     console.log(error);
@@ -155,8 +199,8 @@ exports.deleteSingle = async (req, res) => {
 exports.readSingle = async (req, res) => {
   try {
     const entryData = await knex("article")
-    .leftJoin("featured_images", { "featured_images.article": "article.id" })
-    .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .leftJoin("featured_images", { "featured_images.article": "article.id" })
+      .leftJoin("images", { "featured_images.image_id": "images.id" })
       .select(
         "article.id",
         "article.title",
@@ -179,13 +223,28 @@ exports.readSingle = async (req, res) => {
         s3Client,
         new GetObjectCommand({
           Bucket: "holy-trinity-image-storage",
-          Key: entryData[0].url
+          Key: entryData[0].url,
         }),
-        { expiresIn: 120 }// 120 seconds
-      )
+        { expiresIn: 120 } // 120 seconds
+      );
     }
-    console.log(entryData[0])
-    return res.json(entryData[0]);
+    const gallery = await knex("article_image_gallery")
+      .where({ article: req.params.id })
+      .leftJoin("images", {"article_image_gallery.image_id":"images.id"})
+      .select("images.url", "images.description", "images.id");
+    if (gallery.length > 0) {
+      for (image of gallery) {
+        image.src = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: "holy-trinity-image-storage",
+            Key: image.url,
+          }),
+          { expiresIn: 120 } // 120 seconds
+        );
+      }
+    }
+    return res.json({ entry_data: entryData[0], image_gallery: gallery });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -243,7 +302,7 @@ exports.readPast = async (req, res) => {
   try {
     const entryData = await knex("article")
       .leftJoin("featured_images", { "featured_images.article": "article.id" })
-      .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .leftJoin("images", { "featured_images.image_id": "images.id" })
       .select(
         "article.id",
         "article.title",
@@ -272,17 +331,17 @@ exports.readPast = async (req, res) => {
         single.content.length > 7
       );
     });
-    
+
     for (let single of removedEmpty) {
-      if(single.url !== null) {
+      if (single.url !== null) {
         single.src = await getSignedUrl(
           s3Client,
           new GetObjectCommand({
             Bucket: "holy-trinity-image-storage",
-            Key: single.url
+            Key: single.url,
           }),
-          { expiresIn: 120 }// 120 seconds
-        )
+          { expiresIn: 120 } // 120 seconds
+        );
       }
     }
     return res.status(200).json(removedEmpty);
@@ -298,8 +357,8 @@ exports.readPast = async (req, res) => {
 exports.readLatest = async (req, res) => {
   try {
     const entryData = await knex("article")
-    .leftJoin("featured_images", { "featured_images.article": "article.id" })
-    .leftJoin("images", {"featured_images.image_id":"images.id"})
+      .leftJoin("featured_images", { "featured_images.article": "article.id" })
+      .leftJoin("images", { "featured_images.image_id": "images.id" })
       .select(
         "article.id",
         "article.title",
@@ -333,15 +392,15 @@ exports.readLatest = async (req, res) => {
       latestData = removedEmpty.slice(0, 9);
     } else latestData = removedEmpty;
     for (let single of latestData) {
-      if(single.url !== null) {
+      if (single.url !== null) {
         single.src = await getSignedUrl(
           s3Client,
           new GetObjectCommand({
             Bucket: "holy-trinity-image-storage",
-            Key: single.url
+            Key: single.url,
           }),
-          { expiresIn: 120 }// 120 seconds
-        )
+          { expiresIn: 120 } // 120 seconds
+        );
       }
     }
     return res.status(200).json(latestData);
