@@ -221,7 +221,7 @@ exports.readSingleClosestUpcoming = async (req, res) => {
       return new Date(a.event_date) - new Date(b.event_date);
     });
     let upcomingEventsToDisplay = [];
-    if (reSortedArray.length === 3) {
+    if (reSortedArray.length >= 3) {
       upcomingEventsToDisplay = [
         reSortedArray[0],
         reSortedArray[1],
