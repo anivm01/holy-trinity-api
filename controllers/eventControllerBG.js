@@ -4,10 +4,7 @@ const { sortNewestToOldest } = require("../utilities/sort.js");
 exports.create = async (req, res) => {
   try {
     //req verification
-    if (
-      !req.body.en_id ||
-      !req.body.date
-    ) {
+    if (!req.body.en_id || !req.body.date) {
       return res.status(400).json({
         status: 400,
         message: "Bad request. Required information is missing.",
@@ -19,7 +16,7 @@ exports.create = async (req, res) => {
       event_date: req.body.event_date,
       title: req.body.title,
       event_details: req.body.event_details,
-      en_id: req.body.en_id
+      en_id: req.body.en_id,
     };
     const result = await knex("event_bg").insert(newEntry);
     //find created entry
@@ -76,7 +73,7 @@ exports.updateSingle = async (req, res) => {
     //return response with updated entry
     return res.status(201).json(updatedEntry[0]);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Unable to update the entry",
@@ -167,7 +164,7 @@ exports.readUpcoming = async (req, res) => {
         "event_bg.event_date",
         "event_bg.date",
         "event_bg.en_id",
-        "event_bg.id",
+        "event_bg.id"
       )
       .innerJoin("event", { "event.id": "event_bg.en_id" })
       .where({ "event.is_draft": false });
@@ -222,7 +219,27 @@ exports.readSingleClosestUpcoming = async (req, res) => {
     const reSortedArray = upcomingData.sort((a, b) => {
       return new Date(a.event_date) - new Date(b.event_date);
     });
-    return res.status(200).json(reSortedArray[0]);
+    let upcomingEventsToDisplay = [];
+    if (reSortedArray.length === 3) {
+      upcomingEventsToDisplay = [
+        reSortedArray[0],
+        reSortedArray[1],
+        reSortedArray[2],
+      ];
+    }
+    if (reSortedArray.length === 2) {
+      upcomingEventsToDisplay = [reSortedArray[0], reSortedArray[1]];
+    }
+    if (reSortedArray.length === 1) {
+      upcomingEventsToDisplay = [reSortedArray[0]];
+      if (reSortedArray.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any entries.",
+        });
+      }
+    }
+    return res.status(200).json(upcomingEventsToDisplay);
   } catch (error) {
     res.status(500).json({
       status: 500,

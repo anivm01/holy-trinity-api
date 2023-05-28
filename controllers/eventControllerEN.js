@@ -16,7 +16,7 @@ exports.create = async (req, res) => {
       event_date: req.body.event_date,
       title: req.body.title,
       event_details: req.body.event_details,
-      is_draft: req.body.is_draft
+      is_draft: req.body.is_draft,
     };
     const result = await knex("event").insert(newEntry);
     //find new entry
@@ -61,7 +61,7 @@ exports.updateSingle = async (req, res) => {
       event_date: req.body.event_date,
       title: req.body.title,
       event_details: req.body.event_details,
-      is_draft: req.body.is_draft
+      is_draft: req.body.is_draft,
     };
     await knex("event").where({ id: req.params.id }).update(entryChanges);
     //find updated entry
@@ -71,7 +71,7 @@ exports.updateSingle = async (req, res) => {
     //return response with updated entry
     return res.status(201).json(updatedEntry[0]);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "Unable to update the entry",
@@ -199,6 +199,7 @@ exports.readUpcoming = async (req, res) => {
   }
 };
 
+//this function no longer returns a single event but rather the 3 closest upcoming
 exports.readSingleClosestUpcoming = async (req, res) => {
   try {
     const entryData = await knex
@@ -219,7 +220,27 @@ exports.readSingleClosestUpcoming = async (req, res) => {
     const reSortedArray = upcomingData.sort((a, b) => {
       return new Date(a.event_date) - new Date(b.event_date);
     });
-    return res.status(200).json(reSortedArray[0]);
+    let upcomingEventsToDisplay = [];
+    if (reSortedArray.length === 3) {
+      upcomingEventsToDisplay = [
+        reSortedArray[0],
+        reSortedArray[1],
+        reSortedArray[2],
+      ];
+    }
+    if (reSortedArray.length === 2) {
+      upcomingEventsToDisplay = [reSortedArray[0], reSortedArray[1]];
+    }
+    if (reSortedArray.length === 1) {
+      upcomingEventsToDisplay = [reSortedArray[0]];
+      if (reSortedArray.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          message: "Not Found: Couldn't find any entries.",
+        });
+      }
+    }
+    return res.status(200).json(upcomingEventsToDisplay);
   } catch (error) {
     res.status(500).json({
       status: 500,
