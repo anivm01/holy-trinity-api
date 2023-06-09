@@ -67,13 +67,15 @@ exports.create = async (req, res) => {
     const createdImageBG = await knex("images_bg")
       .select("*")
       .where({ id: resultBG[0] });
-
+    console.log("image uploaded successfully");
     return res.status(201).json({
       message: "ok!",
       new_image_en: createdImageEN,
       new_image_bg: createdImageBG,
     });
   } catch (error) {
+    console.log("image failed to upload");
+    console.log(error);
     return res.status(500).json({
       status: 500,
       message: "This is a message from the api. Image upload failed.",
