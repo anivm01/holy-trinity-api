@@ -5,7 +5,7 @@ const { S3Client } = require("@aws-sdk/client-s3");
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
 const { DeleteObjectCommand } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 require("dotenv").config();
 
 const s3Client = new S3Client({
@@ -22,6 +22,7 @@ const generateFileName = (bytes = 32) =>
   crypto.randomBytes(bytes).toString("hex");
 
 exports.create = async (req, res) => {
+  console.log(req.body);
   try {
     if (!req.body.description || !req.body.descriptionBG) {
       return res.status(400).json({
@@ -34,16 +35,21 @@ exports.create = async (req, res) => {
     const descriptionBg = req.body.descriptionBG;
 
     const fileBuffer = await sharp(file.buffer)
-      .resize({ height: 1080, width: 1920, fit: "inside", withoutEnlargement: true})
+      .resize({
+        height: 1080,
+        width: 1920,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
       .toBuffer();
-      
-      const fileName = generateFileName();
-      const uploadParams = {
-        Bucket: "holy-trinity-image-storage",
-        Body: fileBuffer,
-        Key: fileName,
-        ContentType: file.mimetype,
-      };
+
+    const fileName = generateFileName();
+    const uploadParams = {
+      Bucket: "holy-trinity-image-storage",
+      Body: fileBuffer,
+      Key: fileName,
+      ContentType: file.mimetype,
+    };
     await s3Client.send(new PutObjectCommand(uploadParams));
 
     const newImageEN = { description: description, url: fileName };
@@ -62,17 +68,15 @@ exports.create = async (req, res) => {
       .select("*")
       .where({ id: resultBG[0] });
 
-    return res
-      .status(201)
-      .json({
-        message: "ok!",
-        new_image_en: createdImageEN,
-        new_image_bg: createdImageBG,
-      });
+    return res.status(201).json({
+      message: "ok!",
+      new_image_en: createdImageEN,
+      new_image_bg: createdImageBG,
+    });
   } catch (error) {
     return res.status(500).json({
       status: 500,
-      message: "Something went wrong with the database",
+      message: "This is a message from the api. Image upload failed.",
       error: error,
     });
   }
@@ -87,16 +91,17 @@ exports.readAll = async (_req, res) => {
         message: "Not Found: Couldn't find any images.",
       });
     }
-  for (let image of imagesData) { // For each post, generate a signed URL and save it to the post object
-    image.src = await getSignedUrl(
-      s3Client,
-      new GetObjectCommand({
-        Bucket: "holy-trinity-image-storage",
-        Key: image.url
-      }),
-      { expiresIn: 120 }// 120 seconds
-    )
-  }
+    for (let image of imagesData) {
+      // For each post, generate a signed URL and save it to the post object
+      image.src = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket: "holy-trinity-image-storage",
+          Key: image.url,
+        }),
+        { expiresIn: 120 } // 120 seconds
+      );
+    }
 
     res.status(200).json(imagesData);
   } catch (error) {
@@ -120,15 +125,15 @@ exports.readSingle = async (req, res) => {
         message: "Coundn't find the image you were looking for",
       });
     }
-    let image = imageData[0]
+    let image = imageData[0];
     image.src = await getSignedUrl(
       s3Client,
       new GetObjectCommand({
         Bucket: "holy-trinity-image-storage",
-        Key: image.url
+        Key: image.url,
       }),
-      { expiresIn: 120 }// 120 seconds
-    )
+      { expiresIn: 120 } // 120 seconds
+    );
     return res.json(image);
   } catch (error) {
     return res.status(500).json({
@@ -141,7 +146,6 @@ exports.readSingle = async (req, res) => {
 
 exports.deleteSingle = async (req, res) => {
   try {
-
     const imageData = await knex
       .select("*")
       .from("images")
@@ -156,18 +160,16 @@ exports.deleteSingle = async (req, res) => {
     const deleteParams = {
       Bucket: "holy-trinity-image-storage",
       Key: imageData[0].url,
-    }
+    };
 
-    await s3Client.send(new DeleteObjectCommand(deleteParams))
+    await s3Client.send(new DeleteObjectCommand(deleteParams));
     await knex("images").where({ id: req.params.id }).del();
     return res.status(204).json({ status: 204, message: "Delete successful" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        message: "There was an issue with the database",
-        error: error,
-      });
+    return res.status(500).json({
+      status: 500,
+      message: "There was an issue with the database",
+      error: error,
+    });
   }
 };
