@@ -1,3 +1,5 @@
+const { sortOldestToNewest, sortNewestToOldest } = require("../utilities/sort");
+
 const knex = require("knex")(require("../knexfile"));
 
 exports.create = async (req, res) => {
@@ -15,20 +17,10 @@ exports.create = async (req, res) => {
             date: req.body.date,
             title: req.body.title,
             title_bg: req.body.title_bg,
-            details: req.body.details,
-            details_bg: req.body.details_bg,
-            gospel_reference: req.body.gospel_reference,
-            gospel_reference_bg: req.body.gospel_reference_bg,
-            gospel: req.body.gospel,
-            gospel_bg: req.body.gospel_bg,
-            epistle_reference: req.body.epistle_reference,
-            epistle_reference_bg: req.body.epistle_reference_bg,
-            epistle: req.body.epistle,
-            epistle_bg: req.body.epistle_bg,
-            old_testament_reference: req.body.old_testament_reference,
-            old_testament_reference_bg: req.body.old_testament_reference_bg,
-            old_testament: req.body.old_testament,
-            old_testament_bg: req.body.old_testament_bg,
+            cross: req.body.cross,
+            bold: req.body.bold,
+            red: req.body.red,
+            star: req.body.star,
         };
 
         //check if this date has an associated entry
@@ -89,20 +81,10 @@ exports.updateSingle = async (req, res) => {
             date: req.body.date,
             title: req.body.title,
             title_bg: req.body.title_bg,
-            details: req.body.details,
-            details_bg: req.body.details_bg,
-            gospel_reference: req.body.gospel_reference,
-            gospel_reference_bg: req.body.gospel_reference_bg,
-            gospel: req.body.gospel,
-            gospel_bg: req.body.gospel_bg,
-            epistle_reference: req.body.epistle_reference,
-            epistle_reference_bg: req.body.epistle_reference_bg,
-            epistle: req.body.epistle,
-            epistle_bg: req.body.epistle_bg,
-            old_testament_reference: req.body.old_testament_reference,
-            old_testament_reference_bg: req.body.old_testament_reference_bg,
-            old_testament: req.body.old_testament,
-            old_testament_bg: req.body.old_testament_bg,
+            cross: req.body.cross,
+            bold: req.body.bold,
+            red: req.body.red,
+            star: req.body.star,
         };
         await knex("calendar").where({ id: req.params.id }).update(entryChanges);
         //find updated entry
@@ -176,7 +158,8 @@ exports.readAll = async (_req, res) => {
                 message: "Not Found: Couldn't find any entries.",
             });
         }
-        return res.status(200).json(sortedData);
+        const sortedArray = sortOldestToNewest(entryData)
+        return res.status(200).json(sortedArray);
     } catch (error) {
         res.status(500).json({
             status: 500,
