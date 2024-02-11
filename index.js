@@ -21,6 +21,7 @@ const eventRoutesEN = require("./routes/eventRoutesEN.js")
 const eventRoutesBG = require("./routes/eventRoutesBG.js")
 
 const calendarRoutes = require("./routes/calendarRoutes.js")
+const resourcesRoutes = require("./routes/resourcesRoutes.js")
 
 //worship office and related image routes
 const worshipOfficeRoutesEN = require("./routes/worshipOfficeRoutesEN.js")
@@ -76,6 +77,7 @@ app.use("/featured-image/en", featuredImagesRoutesEN)
 app.use("/featured-image/bg", featuredImagesRoutesBG)
 
 app.use("/calendar", calendarRoutes)
+app.use("/resources", resourcesRoutes)
 
 //published
 app.use("/posted-images", postedImageRoutes)
