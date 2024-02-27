@@ -1,48 +1,26 @@
-const { toMonthYearString } = require("../utilities/helpers");
-const { sortOldestToNewest, sortNewestToOldest } = require("../utilities/sort");
-
 const knex = require("knex")(require("../knexfile"));
 
 exports.create = async (req, res) => {
     try {
         //req verification
-        if (!req.body.date) {
+        if (!req.body.event_date) {
             return res.status(400).json({
                 status: 400,
                 message: "Bad request. Required information is missing.",
             });
         }
-
         //create new entry
         const newEntry = {
-            date: req.body.date,
+            event_date: req.body.event_date,
             title: req.body.title,
             title_bg: req.body.title_bg,
-            cross: req.body.cross,
-            bold: req.body.bold,
-            red: req.body.red,
-            star: req.body.star,
+            is_default: req.body.is_default,
+            event_details: !req.body.is_default && req.body.event_details,
+            event_details_bg: !req.body.is_default && req.body.event_details_bg,
         };
-
-        //check if this date has an associated entry
-        existingEntry = await knex("calendar")
-            .select("*")
-            .where({ date: req.body.date });
-
-        if (existingEntry.length > 0) {
-            await knex("calendar").where({ id: existingEntry[0].id }).update(newEntry);
-            //find updated entry
-            const updatedEntry = await knex("calendar").select("*").where({
-                date: req.body.date,
-            });
-            //return response with updated entry
-            return res.status(201).json(updatedEntry[0]);
-        }
-
-        //if this date has no associated entry, create it
-        const result = await knex("calendar").insert(newEntry);
+        const result = await knex("event").insert(newEntry);
         //find new entry
-        const createdEntry = await knex("calendar").select("*").where({
+        const createdEntry = await knex("event").select("*").where({
             id: result[0],
         });
         //return a response with new entry
@@ -60,14 +38,14 @@ exports.create = async (req, res) => {
 exports.updateSingle = async (req, res) => {
     try {
         //req verification
-        if (!req.body.date) {
+        if (!req.body.event_date) {
             return res.status(400).json({
                 status: 400,
                 message: "Bad request. Required information is missing.",
             });
         }
         //find entry being updated
-        existingEntry = await knex("calendar")
+        existingEntry = await knex("event")
             .select("*")
             .where({ id: req.params.id });
         //return error if it doesn't exist
@@ -79,17 +57,16 @@ exports.updateSingle = async (req, res) => {
         }
         //apply update
         const entryChanges = {
-            date: req.body.date,
+            event_date: req.body.event_date,
             title: req.body.title,
             title_bg: req.body.title_bg,
-            cross: req.body.cross,
-            bold: req.body.bold,
-            red: req.body.red,
-            star: req.body.star,
+            is_default: req.body.is_default,
+            event_details: !req.body.is_default && req.body.event_details,
+            event_details_bg: !req.body.is_default && req.body.event_details_bg,
         };
-        await knex("calendar").where({ id: req.params.id }).update(entryChanges);
+        await knex("event").where({ id: req.params.id }).update(entryChanges);
         //find updated entry
-        const updatedEntry = await knex("calendar").select("*").where({
+        const updatedEntry = await knex("event").select("*").where({
             id: req.params.id,
         });
         //return response with updated entry
@@ -104,10 +81,9 @@ exports.updateSingle = async (req, res) => {
     }
 };
 
-//delete function deletes the entry from both the english and the bulgarian tables because of CASCADE
 exports.deleteSingle = async (req, res) => {
     try {
-        const existingEntry = await knex("calendar")
+        const existingEntry = await knex("event")
             .select("*")
             .where({ id: req.params.id });
         if (existingEntry.length === 0) {
@@ -116,7 +92,7 @@ exports.deleteSingle = async (req, res) => {
                 message: "Couldn't find the entry you're trying to delete",
             });
         }
-        await knex("calendar").where({ id: req.params.id }).del();
+        await knex("event").where({ id: req.params.id }).del();
         return res.status(204).json({ status: 204, message: "Delete successful" });
     } catch (error) {
         return res.status(500).json({
@@ -131,7 +107,7 @@ exports.readSingle = async (req, res) => {
     try {
         const entryData = await knex
             .select("*")
-            .from("calendar")
+            .from("event")
             .where({ id: req.params.id });
         if (entryData.length === 0) {
             return res.status(404).json({
@@ -149,61 +125,16 @@ exports.readSingle = async (req, res) => {
     }
 };
 
-exports.readSingleByDate = async (req, res) => {
-    try {
-        const dateTimestamp = parseInt(req.params.date, 10);
-
-
-        const entryData = await knex
-            .select("*")
-            .from("calendar")
-            .where("date", dateTimestamp); // Query using the converted timestamp
-
-        if (entryData.length === 0) {
-            return res.status(404).json({
-                status: 404,
-                message: "Couldn't find the entry you were looking for",
-            });
-        }
-        return res.json(entryData[0]);
-    } catch (error) {
-        return res.status(500).json({
-            status: 500,
-            message: "There was an issue with the database",
-            error: error,
-        });
-    }
-};
-
 exports.readAll = async (_req, res) => {
-
     try {
-        const entryData = await knex.select("*").from("calendar");
+        const entryData = await knex.select("*").from("event").orderBy("event_date", "desc");
         if (entryData.length === 0) {
             return res.status(404).json({
                 status: 404,
                 message: "Not Found: Couldn't find any entries.",
             });
         }
-
-        // Group entries by month and year
-        const groupedByMonth = entryData.reduce((acc, entry) => {
-            const monthYear = toMonthYearString(entry.date);
-            if (!acc[monthYear]) {
-                acc[monthYear] = [];
-            }
-            acc[monthYear].push(entry);
-            return acc;
-        }, {});
-
-        // Optionally, you can sort the groups by date (keys) if needed
-        const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => new Date(a) - new Date(b));
-        const sortedGroupedByMonth = sortedMonths.reduce((acc, month) => {
-            acc[month] = groupedByMonth[month];
-            return acc;
-        }, {});
-
-        return res.status(200).json(sortedGroupedByMonth);
+        return res.status(200).json(entryData);
     } catch (error) {
         res.status(500).json({
             status: 500,
@@ -211,23 +142,30 @@ exports.readAll = async (_req, res) => {
             error: error,
         });
     }
-    // try {
-    //     const entryData = await knex.select("*").from("calendar");
-
-    //     if (entryData.length === 0) {
-    //         return res.status(404).json({
-    //             status: 404,
-    //             message: "Not Found: Couldn't find any entries.",
-    //         });
-    //     }
-    //     const sortedArray = sortOldestToNewest(entryData)
-    //     return res.status(200).json(sortedArray);
-    // } catch (error) {
-    //     res.status(500).json({
-    //         status: 500,
-    //         message: "There was an issue with the database",
-    //         error: error,
-    //     });
-    // }
 };
 
+exports.readUpcoming = async (req, res) => {
+    const requestDate = req.params.date; // Get the date from the route parameter
+    try {
+        // Convert the provided date to a UNIX timestamp
+
+        // Query the database for the next 10 events after the given date
+        const upcomingEvents = await knex('event')
+            .where('event_date', '>', requestDate)
+            .orderBy('event_date', 'asc')
+            .limit(10);
+        if (upcomingEvents.length === 0) {
+            return res.status(404).json({
+                status: 404,
+                message: "Not Found: Couldn't find any upcoming events.",
+            });
+        }
+        return res.status(200).json(upcomingEvents);
+    } catch (error) {
+        res.status(500).json({
+            status: 500,
+            message: "There was an issue with the database",
+            error: error,
+        });
+    }
+};

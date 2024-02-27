@@ -7,6 +7,8 @@ router
     .get(calendarController.readAll)
     .post(authorizeAdmin, calendarController.create);
 
+router.route("/bydate/:date").get(calendarController.readSingleByDate)
+
 router
     .route("/:id")
     .get(calendarController.readSingle)

@@ -17,8 +17,8 @@ const postedImageRoutes = require("./routes/postedImageRoutes.js")
 //no image routes
 const weeklyAnnouncementRoutesEN = require("./routes/weeklyAnnouncementRoutesEN.js");
 const weeklyAnnouncementRoutesBG = require("./routes/weeklyAnnouncementRoutesBG.js");
-const eventRoutesEN = require("./routes/eventRoutesEN.js")
-const eventRoutesBG = require("./routes/eventRoutesBG.js")
+const eventRoutes = require("./routes/eventRoutes.js")
+// const eventRoutesBG = require("./routes/eventRoutesBG.js")
 
 const calendarRoutes = require("./routes/calendarRoutes.js")
 const resourcesRoutes = require("./routes/resourcesRoutes.js")
@@ -57,6 +57,12 @@ app.use(cors());
 app.use("/users", userRoutes)
 app.use("/contact", contactRoutes)
 
+//updated
+
+app.use("/event", eventRoutes)
+
+//not updated
+
 app.use("/weekly-announcement/en", weeklyAnnouncementRoutesEN)
 app.use("/weekly-announcement/bg", weeklyAnnouncementRoutesBG)
 app.use("/images/en", imagesRoutesEN)
@@ -69,13 +75,16 @@ app.use("/obituary/en", obituaryRoutesEN)
 app.use("/obituary/bg", obituaryRoutesBG)
 app.use("/deceased/en", deceasedRoutesEN)
 app.use("/deceased/bg", deceasedRoutesBG)
-app.use("/event/en", eventRoutesEN)
-app.use("/event/bg", eventRoutesBG)
+
+
+
 app.use("/article/en", articleRoutesEN)
 app.use("/article/bg", articleRoutesBG)
 app.use("/featured-image/en", featuredImagesRoutesEN)
 app.use("/featured-image/bg", featuredImagesRoutesBG)
 
+
+//newly added
 app.use("/calendar", calendarRoutes)
 app.use("/resources", resourcesRoutes)
 
