@@ -18,10 +18,11 @@ const postedImageRoutes = require("./routes/postedImageRoutes.js")
 const weeklyAnnouncementRoutesEN = require("./routes/weeklyAnnouncementRoutesEN.js");
 const weeklyAnnouncementRoutesBG = require("./routes/weeklyAnnouncementRoutesBG.js");
 const eventRoutes = require("./routes/eventRoutes.js")
-// const eventRoutesBG = require("./routes/eventRoutesBG.js")
 
+//newly added
 const calendarRoutes = require("./routes/calendarRoutes.js")
 const resourcesRoutes = require("./routes/resourcesRoutes.js")
+const priestResourcesRoutes = require("./routes/priestResourcesRoutes.js")
 
 //worship office and related image routes
 const worshipOfficeRoutesEN = require("./routes/worshipOfficeRoutesEN.js")
@@ -87,6 +88,7 @@ app.use("/featured-image/bg", featuredImagesRoutesBG)
 //newly added
 app.use("/calendar", calendarRoutes)
 app.use("/resources", resourcesRoutes)
+app.use("/priest-resources", priestResourcesRoutes)
 
 //published
 app.use("/posted-images", postedImageRoutes)
