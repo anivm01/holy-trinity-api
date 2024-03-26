@@ -6,8 +6,8 @@ const PORT = process.env.PORT || 8080;
 
 //user routes
 const userRoutes = require("./routes/userRoutes.js")
-
 const contactRoutes = require("./routes/contactRoutes.js")
+
 
 //image only routes
 const imagesRoutesEN = require("./routes/imagesRoutesEN.js")
@@ -23,6 +23,7 @@ const eventRoutes = require("./routes/eventRoutes.js")
 const calendarRoutes = require("./routes/calendarRoutes.js")
 const resourcesRoutes = require("./routes/resourcesRoutes.js")
 const priestResourcesRoutes = require("./routes/priestResourcesRoutes.js")
+const uploadRoutes = require("./routes/uploadRoutes.js")
 
 //worship office and related image routes
 const worshipOfficeRoutesEN = require("./routes/worshipOfficeRoutesEN.js")
@@ -57,6 +58,9 @@ app.use(cors());
 //routes
 app.use("/users", userRoutes)
 app.use("/contact", contactRoutes)
+
+app.use("/assets", uploadRoutes)
+
 
 //updated
 
