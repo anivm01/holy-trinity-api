@@ -59,12 +59,10 @@ app.use(cors());
 app.use("/users", userRoutes)
 app.use("/contact", contactRoutes)
 
-app.use("/assets", uploadRoutes)
-
-
 //updated
-
 app.use("/event", eventRoutes)
+
+
 
 //not updated
 
@@ -93,6 +91,8 @@ app.use("/featured-image/bg", featuredImagesRoutesBG)
 app.use("/calendar", calendarRoutes)
 app.use("/resources", resourcesRoutes)
 app.use("/priest-resources", priestResourcesRoutes)
+
+app.use("/assets", uploadRoutes)
 
 //published
 app.use("/posted-images", postedImageRoutes)

@@ -188,7 +188,8 @@ exports.readAll = async (_req, res) => {
 };
 
 exports.createCategory = async (req, res) => {
-    const { name } = req.body; // Assuming the name of the new category is provided in the request body
+    console.log(req.body)
+    const { name } = req.body;
 
     try {
         const maxOrderObj = await knex('resource_categories').max('order as maxOrder').first();
